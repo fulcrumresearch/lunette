@@ -1,0 +1,6 @@
+inspect_morph/__pycache__/
+.DS_STORE
+.claude/
+tests/__pycache__/
+logs/
+
