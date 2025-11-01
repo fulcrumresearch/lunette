@@ -4,6 +4,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from inspect_ai.model import (
+    ChatMessageAssistant,
+    ChatMessageSystem,
+    ChatMessageTool,
+    ChatMessageUser,
+)
+from inspect_ai.tool import ToolCall as InspectToolCall
+
 
 ## content types ##
 
@@ -17,7 +25,7 @@ class Text(BaseModel):
 
 class Reasoning(BaseModel):
     """
-    Reasoning content. Only used for models in the Claude family, according to the Inspect documentation.
+    Reasoning content. Only used for models in the Claude family, according to the Inspect AI documentation.
 
     See the specification for [thinking blocks](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#understanding-thinking-blocks) for Claude models.
     """
@@ -42,6 +50,15 @@ class ToolCall(BaseModel):
     id: str
     function: str
     arguments: dict[str, Any]
+
+    @classmethod
+    def from_inspect(cls, tool_call: InspectToolCall) -> ToolCall:
+        """Convert an Inspect AI `ToolCall` to our `ToolCall` model."""
+        return cls(
+            id=tool_call.id,
+            function=tool_call.function,
+            arguments=tool_call.arguments,
+        )
 
 
 ## message types ##
@@ -69,11 +86,21 @@ class SystemMessage(BaseMessage):
 
     role: Literal["system"] = "system"
 
+    @classmethod
+    def from_inspect(cls, position: int, message: ChatMessageSystem) -> SystemMessage:
+        """Convert an Inspect AI `ChatMessageSystem` to `SystemMessage`."""
+        return cls(position=position, content=message.content)
+
 
 class UserMessage(BaseMessage):
     """User message."""
 
     role: Literal["user"] = "user"
+
+    @classmethod
+    def from_inspect(cls, position: int, message: ChatMessageUser) -> UserMessage:
+        """Convert an Inspect AI `ChatMessageUser` to `UserMessage`."""
+        return cls(position=position, content=message.content)
 
 
 class AssistantMessage(BaseMessage):
@@ -81,6 +108,23 @@ class AssistantMessage(BaseMessage):
 
     role: Literal["assistant"] = "assistant"
     tool_calls: list[ToolCall] | None = None
+
+    @classmethod
+    def from_inspect(
+        cls, position: int, message: ChatMessageAssistant
+    ) -> AssistantMessage:
+        """Convert an Inspect AI `ChatMessageAssistant` to `AssistantMessage`."""
+        tool_calls = (
+            [ToolCall.from_inspect(tool_call) for tool_call in message.tool_calls]
+            if message.tool_calls
+            else None
+        )
+
+        return cls(
+            position=position,
+            content=message.content,
+            tool_calls=tool_calls,
+        )
 
 
 class ToolMessage(BaseMessage):
@@ -92,6 +136,30 @@ class ToolMessage(BaseMessage):
 
     role: Literal["tool"] = "tool"
     tool_call: ToolCall
+
+    @classmethod
+    def from_inspect(
+        cls,
+        position: int,
+        message: ChatMessageTool,
+        tool_call: ToolCall,
+    ) -> ToolMessage:
+        """
+        Convert an Inspect AI `ChatMessageTool` to `ToolMessage`.
+
+        Args:
+            position: Position in the trajectory
+            message: The Inspect ChatMessageTool
+            tool_call: The matching ToolCall (found by the caller)
+
+        Returns:
+            ToolMessage with proper tool_call reference
+        """
+        return cls(
+            position=position,
+            content=message.text,
+            tool_call=tool_call,
+        )
 
     @property
     def function(self) -> str:

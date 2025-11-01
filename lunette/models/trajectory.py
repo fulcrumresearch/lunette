@@ -1,8 +1,27 @@
-from typing import Any, Literal
+from __future__ import annotations
+
+from typing import Any
+
 
 from pydantic import BaseModel, Field
 
-from lunette.models.messages import Message
+from inspect_ai.log import EvalSample
+from inspect_ai.model import (
+    ChatMessageAssistant,
+    ChatMessageSystem,
+    ChatMessageUser,
+    ChatMessageTool,
+)
+from inspect_ai.scorer import Score
+
+from lunette.models.messages import (
+    AssistantMessage,
+    Message,
+    SystemMessage,
+    ToolCall,
+    ToolMessage,
+    UserMessage,
+)
 
 
 class ScalarScore(BaseModel):
@@ -17,22 +36,50 @@ class ScalarScore(BaseModel):
     explanation: str | None = None
     """Explanation of the score, if available."""
 
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] | None = None
     """Additional metadata about the score."""
+
+    @classmethod
+    def from_inspect(cls, score: Score) -> ScalarScore:
+        """Convert an Inspect AI `Score` to a `ScalarScore`."""
+
+        try:
+            value: str | int | float | bool = score.as_scalar()
+        except ValueError:
+            raise ValueError("Score is not a scalar")
+
+        match value:
+            case "C":
+                value = 1.0
+            case "P":
+                value = 0.5
+            case "I":
+                value = 0.0
+            case str():
+                try:
+                    value = float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid score value string '{value}'")
+            case int() | float() | bool():
+                value = float(value)
+
+        return cls(
+            value=value,
+            answer=score.answer,
+            explanation=score.explanation,
+            metadata=score.metadata,
+        )
 
 
 class Trajectory(BaseModel):
     """A single agent execution trace on an Inspect sample."""
 
     # sample-specific
-    task: str
+    task: str  # must be extracted from an Inspect AI `EvalSpec`
     sample: int | str  # Inspect sample ID
-    model: str
 
     # trajectory-specific
-    status: Literal[
-        "started", "success", "cancelled", "error"
-    ]  # note British spelling of "canceled" to match Inspect's `status` field
+    model: str  # must be extracted from an Inspect AI `EvalSpec`
     messages: list[Message]
     scores: dict[str, ScalarScore] | None = None
 
@@ -42,8 +89,69 @@ class Trajectory(BaseModel):
 
     @property
     def score(self) -> ScalarScore | None:
-        """Return the score for the trajectory, if there is exactly one score, otherwise `None`."""
+        """Return the unique score for the trajectory if it exists and `None` otherwise."""
         if self.scores is None or len(self.scores) != 1:
             return None
         [score] = self.scores.values()
         return score
+
+    @classmethod
+    def from_inspect(cls, task: str, model: str, sample: EvalSample) -> Trajectory:
+        """Convert an Inspect AI `EvalSample` to a `Trajectory`."""
+
+        # fail fast if the sample has an error
+        if sample.error:
+            raise ValueError(f"Sample {sample.id} has an error: {sample.error.message}")
+
+        # start by extracting scores, so we fail fast if they aren't scalars
+        scores: dict[str, ScalarScore] | None = (
+            {
+                name: ScalarScore.from_inspect(score)
+                for name, score in sample.scores.items()
+            }
+            if sample.scores is not None
+            else None
+        )
+
+        # convert InspectAI `ChatMessage`s to our `Message`s
+        messages: list[Message] = []
+        tool_calls: dict[str, ToolCall] = {}  # tool call ID -> `ToolCall`
+
+        for position, message in enumerate(sample.messages):
+            match message:
+                case ChatMessageAssistant():
+                    assistant_message = AssistantMessage.from_inspect(position, message)
+                    messages.append(assistant_message)
+                    for tool_call in assistant_message.tool_calls:
+                        tool_calls[tool_call.id] = tool_call
+
+                case ChatMessageTool():
+                    tool_call_id = message.tool_call_id
+                    if tool_call_id not in tool_calls:
+                        raise ValueError(f"Tool call ID {tool_call_id} not found")
+                    tool_message = ToolMessage.from_inspect(
+                        position, message, tool_calls[tool_call_id]
+                    )
+                    messages.append(tool_message)
+
+                case ChatMessageSystem():
+                    system_message = SystemMessage.from_inspect(position, message)
+                    messages.append(system_message)
+
+                case ChatMessageUser():
+                    user_message = UserMessage.from_inspect(position, message)
+                    messages.append(user_message)
+
+        # extract solution from metadata if available
+        # TODO: make this more general; currently only supports the "patch" key (used in SWE-bench)
+        solution: str | None = sample.metadata.get("patch", None)
+
+        return cls(
+            task=task,
+            sample=sample.id,
+            model=model,
+            messages=messages,
+            scores=scores,
+            metadata=sample.metadata,
+            solution=solution,
+        )
