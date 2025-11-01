@@ -122,8 +122,9 @@ class Trajectory(BaseModel):
                 case ChatMessageAssistant():
                     assistant_message = AssistantMessage.from_inspect(position, message)
                     messages.append(assistant_message)
-                    for tool_call in assistant_message.tool_calls:
-                        tool_calls[tool_call.id] = tool_call
+                    if assistant_message.tool_calls is not None:
+                        for tool_call in assistant_message.tool_calls:
+                            tool_calls[tool_call.id] = tool_call
 
                 case ChatMessageTool():
                     tool_call_id = message.tool_call_id
