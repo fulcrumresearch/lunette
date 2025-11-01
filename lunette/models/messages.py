@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
 
-## content types
+## content types ##
 
 
 class Text(BaseModel):
@@ -17,7 +17,7 @@ class Text(BaseModel):
 
 class Reasoning(BaseModel):
     """
-    Reasoning content. Only used for models in the Claude family.
+    Reasoning content. Only used for models in the Claude family, according to the Inspect documentation.
 
     See the specification for [thinking blocks](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#understanding-thinking-blocks) for Claude models.
     """
@@ -26,19 +26,25 @@ class Reasoning(BaseModel):
     reasoning: str
 
 
-class ToolUse(BaseModel):
-    """Tool use content."""
-
-    type: Literal["tool_use"] = "tool_use"
-    name: str
-    arguments: str
-    result: str
+Content = Text | Reasoning
 
 
-Content = Text | Reasoning | ToolUse
+## tool call ##
 
 
-## message types
+class ToolCall(BaseModel):
+    """
+    A tool call.
+
+    Does not include the result of the tool call, as it is not available until a later `ToolMessage` is received.
+    """
+
+    id: str
+    function: str
+    arguments: dict[str, Any]
+
+
+## message types ##
 
 
 class BaseMessage(BaseModel):
@@ -74,7 +80,33 @@ class AssistantMessage(BaseMessage):
     """Assistant message."""
 
     role: Literal["assistant"] = "assistant"
-    tool_calls: list[ToolUse] | None = None
+    tool_calls: list[ToolCall] | None = None
 
 
-Message = SystemMessage | UserMessage | AssistantMessage
+class ToolMessage(BaseMessage):
+    """
+    Tool message.
+
+    The `content` field contains the result of the tool call.
+    """
+
+    role: Literal["tool"] = "tool"
+    tool_call: ToolCall
+
+    @property
+    def function(self) -> str:
+        """Get the function name of this tool call."""
+        return self.tool_call.function
+
+    @property
+    def arguments(self) -> dict[str, Any]:
+        """Get the arguments of this tool call."""
+        return self.tool_call.arguments
+
+    @property
+    def result(self) -> str:
+        """Get the result of this tool call."""
+        return self.text
+
+
+Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage
