@@ -1,6 +1,6 @@
-inspect_morph/__pycache__/
+**/__pycache__/
+**.egg-info/
 .DS_STORE
 .claude/
-tests/__pycache__/
 logs/
 

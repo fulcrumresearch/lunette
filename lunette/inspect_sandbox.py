@@ -82,6 +82,8 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         cls, task_name: str, config: SandboxEnvironmentConfigType | None
     ) -> None:
         # validate prereqs
+
+        print("CONFIG", config)
         await validate_prereqs()
 
         # intialize project cleanup
@@ -153,6 +155,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         metadata: dict[str, str],
     ) -> dict[str, SandboxEnvironment]:
         # create environment variables for sample metadata
+        print(config, metadata)
         resolved = resolve_config_environment(config, metadata)
         env = resolved.env if resolved is not None else {}
 
