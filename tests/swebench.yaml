@@ -1,0 +1,9 @@
+services:
+    default:
+        image: {{IMAGE_NAME}}
+        command: "sleep infinity"
+        working_dir: /testbed
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
