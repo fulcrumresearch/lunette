@@ -160,6 +160,7 @@ class LunetteClient:
         image_name: Optional[str] = None
         tar_file = None
 
+
         if "image" in service and service["image"]:
             image_name = service["image"]
 
