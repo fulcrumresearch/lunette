@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy'",
@@ -1299,12 +1300,13 @@ wheels = [
 [[package]]
 name = "lunette"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "inspect-ai" },
     { name = "inspect-evals", extra = ["swe-bench"] },
     { name = "openai" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -1313,6 +1315,7 @@ requires-dist = [
     { name = "inspect-ai" },
     { name = "inspect-evals", extras = ["swe-bench"], git = "https://github.com/UKGovernmentBEIS/inspect_evals.git" },
     { name = "openai", specifier = ">=2.6.1" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]
