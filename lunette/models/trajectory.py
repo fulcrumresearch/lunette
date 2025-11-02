@@ -44,7 +44,7 @@ class ScalarScore(BaseModel):
         """Convert an Inspect AI `Score` to a `ScalarScore`."""
 
         try:
-            value: str | int | float | bool = score.as_scalar()
+            value: str | int | float | bool = score._as_scalar()
         except ValueError:
             raise ValueError("Score is not a scalar")
 
