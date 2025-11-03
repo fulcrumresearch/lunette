@@ -1,11 +1,10 @@
 """Pydantic models for defining investigation plans."""
 
-from typing import Any, Iterable, Literal, Optional
+from typing import Any, Literal
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
-from lunette.models import Trajectory
+from pydantic import BaseModel, Field
 
 
 class InvestigationAgent(BaseModel):
@@ -16,7 +15,10 @@ class InvestigationAgent(BaseModel):
     """
 
     name: str = Field(..., description="Unique identifier for this agent")
-    prompt: str = Field(..., description="Investigation prompt/instructions for the agent")
+    prompt: str = Field(
+        ..., description="Investigation prompt/instructions for the agent"
+    )
+
 
 class TrajectoryFilters(BaseModel):
     """Filter criteria for selecting trajectories to investigate.
@@ -26,8 +28,7 @@ class TrajectoryFilters(BaseModel):
     """
 
     filters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Filter criteria as key-value pairs"
+        default_factory=dict, description="Filter criteria as key-value pairs"
     )
 
     def __init__(self, **data):
@@ -45,19 +46,20 @@ class AnalysisPlan(BaseModel):
     Defines agents to run and filters for selecting trajectories to investigate.
     """
 
-    name: Optional[str] = Field(None, description="Optional name for this investigation plan")
+    name: str | None = Field(
+        None, description="Optional name for this investigation plan"
+    )
     type: Literal["investigation"] = Field(
         "investigation",
-        description="Plan type (currently only 'investigation' is supported)"
+        description="Plan type (currently only 'investigation' is supported)",
     )
     agents: list[InvestigationAgent] = Field(
         ...,
         description="List of agents to run on each matching trajectory",
-        min_length=1
+        min_length=1,
     )
     trajectory_filters: TrajectoryFilters = Field(
-        ...,
-        description="Criteria for selecting trajectories to investigate"
+        ..., description="Criteria for selecting trajectories to investigate"
     )
 
     def to_yaml(self) -> str:
