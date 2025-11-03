@@ -9,8 +9,8 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
+from lunette.models.trajectory import Trajectory
 from lunette.sandbox import Sandbox
-from lunette.models import Trajectory
 
 
 def _read_dockerignore(build_dir: Path) -> List[str]:
@@ -159,7 +159,6 @@ class LunetteClient:
         """
         image_name: Optional[str] = None
         tar_file = None
-
 
         if "image" in service and service["image"]:
             image_name = service["image"]

@@ -6,7 +6,7 @@ from pathlib import Path
 from inspect_ai.hooks import Hooks, SampleEnd, TaskStart, hooks
 
 from lunette.client import LunetteClient
-from lunette.models import Trajectory
+from lunette.models.trajectory import Trajectory
 
 # Ensure log directory exists
 log_dir = Path.home() / ".lunette" / "logs"
