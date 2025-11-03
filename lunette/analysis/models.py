@@ -73,23 +73,6 @@ class AnalysisPlan(BaseModel):
         return yaml.dump(data, sort_keys=False, default_flow_style=False)
 
     @classmethod
-    def from_yaml(cls, yaml_str: str) -> "AnalysisPlan":
-        """Deserialize plan from YAML string.
-
-        Args:
-            yaml_str: YAML string representation of a plan
-
-        Returns:
-            AnalysisPlan instance
-
-        Raises:
-            yaml.YAMLError: If YAML is invalid
-            pydantic.ValidationError: If data doesn't match schema
-        """
-        data = yaml.safe_load(yaml_str)
-        return cls.model_validate(data)
-
-    @classmethod
     def from_yaml_file(cls, path: str | Path) -> "AnalysisPlan":
         """Load plan from YAML file.
 
@@ -98,9 +81,14 @@ class AnalysisPlan(BaseModel):
 
         Returns:
             AnalysisPlan instance
+
+        Raises:
+            yaml.YAMLError: If YAML is invalid
+            pydantic.ValidationError: If data doesn't match schema
         """
         yaml_str = Path(path).read_text()
-        return cls.from_yaml(yaml_str)
+        data = yaml.safe_load(yaml_str)
+        return cls.model_validate(data)
 
     def to_yaml_file(self, path: str | Path) -> None:
         """Save plan to YAML file.
