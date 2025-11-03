@@ -3,7 +3,7 @@ from __future__ import annotations
 from inspect_ai import Task, task
 from inspect_ai.dataset import Sample
 from inspect_ai.util import sandbox
-from inspect_ai.solver import solver, system_message
+from inspect_ai.solver import system_message
 from inspect_ai.scorer import Score, scorer, accuracy  # simple, no-LLM return type
 
 
@@ -34,6 +34,7 @@ def lunette_smoke():
         outputs.append(f"$ uname -a\n{r.stdout}{r.stderr}")
 
         return Score(value=1)
+
     return score
 
 
@@ -47,5 +48,5 @@ def test_lunette_docker():
         dataset=[Sample(input="smoke")],
         sandbox="lunette",
         solver=system_message("lll"),
-        scorer=lunette_smoke()
+        scorer=lunette_smoke(),
     )

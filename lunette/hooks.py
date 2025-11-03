@@ -1,13 +1,12 @@
 """Inspect AI hooks for auto-saving trajectories."""
 
 import logging
-import os
 from pathlib import Path
 
-from inspect_ai.hooks import Hooks, TaskEnd, hooks
+from inspect_ai.hooks import Hooks, SampleEnd, TaskStart, hooks
 
 from lunette.client import LunetteClient
-from lunette.models import Trajectory, sample_to_trajectory
+from lunette.models.trajectory import Trajectory
 
 # Ensure log directory exists
 log_dir = Path.home() / ".lunette" / "logs"
@@ -47,28 +46,44 @@ class LunetteLoggerHook(Hooks):
     def __init__(self):
         super().__init__()
         self.client = LunetteClient()
+        self.task: str | None = None
+        self.model: str | None = None
 
-    async def on_sample_end(self, data: TaskEnd) -> None:
+    async def on_task_start(self, data: TaskStart) -> None:
         """
-        Called when a task completes. Saves all trajectories to the backend.
+        Called when a task starts. Stores task and model info for later use.
 
         Args:
-            data: Task end data containing the complete task log
+            data: Task start data containing the eval spec
         """
+        self.task = data.spec.task
+        self.model = data.spec.model
+        logger.info(f"Starting task '{self.task}' with model '{self.model}'")
 
-        trajectory = sample_to_trajectory(
-            sample=data.sample,  # get model name?
-        )
-        # Add run_id and eval_id to metadata
-        if trajectory.metadata is None:
-            trajectory.metadata = {}
+    async def on_sample_end(self, data: SampleEnd) -> None:
+        """
+        Called when a sample completes. Saves the trajectory to the backend.
+
+        Args:
+            data: Sample end data containing the completed sample
+        """
+        if self.task is None or self.model is None:
+            logger.error("Task or model not set - skipping trajectory save")
+            return
 
         try:
+            trajectory = Trajectory.from_inspect(
+                task=self.task,
+                model=self.model,
+                sample=data.sample,
+            )
+
             saved = await self.client.save_trajectories(
                 [trajectory]
             )  # todo: check return type here, also add batching
+
             if saved:
-                logger.info(f"Saved trajectory {trajectory.id}")
+                logger.info(f"Saved trajectory for sample {trajectory.sample}")
 
         except Exception as e:
-            logger.error(f"Failed to save: {e}")
+            logger.error(f"Failed to save trajectory for sample {data.sample_id}: {e}")

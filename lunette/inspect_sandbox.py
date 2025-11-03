@@ -1,29 +1,17 @@
-import base64
-import errno
-import json
 import os
 import shlex
 import tempfile
 from logging import getLogger
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Literal, NamedTuple, Union, overload, Dict
 
 from typing_extensions import override
 
-from inspect_ai._util.error import PrerequisiteError
 from inspect_ai.util._subprocess import ExecResult, subprocess
 
 from inspect_ai.util._sandbox.environment import (
-    HostMapping,
-    PortMapping,
-    SandboxConnection,
     SandboxEnvironment,
     SandboxEnvironmentConfigType,
-)
-from inspect_ai.util._sandbox.limits import (
-    SandboxEnvironmentLimits,
-    verify_exec_result_size,
-    verify_read_file_size,
 )
 from inspect_ai.util._sandbox.registry import sandboxenv
 from inspect_ai.util._sandbox.docker.cleanup import (
@@ -36,20 +24,10 @@ from inspect_ai.util._sandbox.docker.cleanup import (
 )
 from inspect_ai.util._sandbox.docker.compose import (
     compose_build,
-    compose_check_running,
     compose_cleanup_images,
-    compose_cp,
-    compose_exec,
-    compose_ps,
-    compose_pull,
     compose_services,
-    compose_up,
 )
 from inspect_ai.util._sandbox.docker.config import CONFIG_FILES, DOCKERFILE
-from inspect_ai.util._sandbox.docker.internal import (
-    build_internal_image,
-    is_internal_image,
-)
 from inspect_ai.util._sandbox.docker.prereqs import validate_prereqs
 from inspect_ai.util._sandbox.docker.util import ComposeProject, task_project_name
 
