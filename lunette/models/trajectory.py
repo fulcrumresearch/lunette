@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from inspect_ai.log import EvalSample
 from inspect_ai.model import (
@@ -87,13 +87,14 @@ class Trajectory(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     solution: str | None = None
 
+    @computed_field
     @property
-    def score(self) -> ScalarScore | None:
-        """Return the unique score for the trajectory if it exists and `None` otherwise."""
+    def score(self) -> float | None:
+        """Return the unique score value for the trajectory if it exists and `None` otherwise."""
         if self.scores is None or len(self.scores) != 1:
             return None
         [score] = self.scores.values()
-        return score
+        return score.value
 
     @classmethod
     def from_inspect(cls, task: str, model: str, sample: EvalSample) -> Trajectory:
