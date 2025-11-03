@@ -1,7 +1,6 @@
 """Inspect AI hooks for auto-saving trajectories."""
 
 import logging
-import os
 from pathlib import Path
 
 from inspect_ai.hooks import Hooks, SampleEnd, TaskStart, hooks

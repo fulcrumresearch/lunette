@@ -5,7 +5,5 @@ def lunette():
 
     return LunetteSandboxEnvironment
 
-from lunette.hooks import LunetteLoggerHook
-
 
 lunette()
