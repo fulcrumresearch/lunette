@@ -9,7 +9,6 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
-from lunette.models.trajectory import Trajectory
 from lunette.models.run import Run
 from lunette.sandbox import Sandbox
 
@@ -227,7 +226,7 @@ class LunetteClient:
         multiple trajectory samples for the same task and model.
 
         Args:
-            run: Run object containing run_id, task, model, and list of trajectories
+            run: Run object containing id, task, model, and list of trajectories
 
         Returns:
             dict with:
@@ -240,13 +239,6 @@ class LunetteClient:
         """
         if not run.trajectories:
             raise ValueError("Cannot save run with empty trajectory list")
-
-        # Validate all trajectories belong to this run
-        for traj in run.trajectories:
-            if traj.run_id != run.id:
-                raise ValueError(
-                    f"Trajectory run_id '{traj.run_id}' does not match run run_id '{run.id}'"
-                )
 
         # Serialize run to JSON
         run_dict = run.model_dump()

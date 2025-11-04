@@ -74,26 +74,19 @@ class ScalarScore(BaseModel):
 class Trajectory(BaseModel):
     """A single agent execution trace on an Inspect sample.
 
-    Trajectories belong to a Run, which defines the task and model.
-    A trajectory represents one sample's execution within that run.
+    Trajectories are grouped into Runs, which provide task and model context.
+    A trajectory represents one sample's execution trace.
     """
 
-    # run-specific
-    run_id: str
-    """Unique identifier for the evaluation run this trajectory belongs to."""
-
-    # sample-specific
     sample: int | str
     """Inspect sample ID - identifies which sample this trajectory is for."""
 
-    # trajectory-specific data
     messages: list[Message]
     """Sequence of messages (System, User, Assistant, Tool) in this execution."""
 
     scores: dict[str, ScalarScore] | None = None
     """Multi-metric scores for this trajectory, if available."""
 
-    # metadata
     metadata: dict[str, Any] = Field(default_factory=dict)
     """Additional metadata about this trajectory execution."""
 
@@ -110,18 +103,14 @@ class Trajectory(BaseModel):
         return score.value
 
     @classmethod
-    def from_inspect(cls, run_id: str, sample: EvalSample) -> Trajectory:
+    def from_inspect(cls, sample: EvalSample) -> Trajectory:
         """Convert an Inspect AI `EvalSample` to a `Trajectory`.
 
         Args:
-            run_id: The run ID this trajectory belongs to
             sample: The Inspect AI sample to convert
 
         Returns:
             Trajectory object containing the sample's execution trace
-
-        Note:
-            task and model come from the parent Run, not from individual trajectories.
         """
 
         # fail fast if the sample has an error
@@ -169,10 +158,10 @@ class Trajectory(BaseModel):
                     messages.append(user_message)
 
         # extract solution from metadata if available
+        # TODO: make this more general; currently only supports the "patch" key (used in SWE-bench)
         solution: str | None = sample.metadata.get("patch", None)
 
         return cls(
-            run_id=run_id,
             sample=sample.id,
             messages=messages,
             scores=scores,

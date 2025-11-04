@@ -14,7 +14,6 @@ def test_run_creation():
         model="claude-sonnet-4",
         trajectories=[
             Trajectory(
-                run_id="test-run-1",
                 sample="1",
                 messages=[
                     UserMessage(position=0, content="Test message"),
@@ -30,7 +29,7 @@ def test_run_creation():
     assert run.task == "test-task"
     assert run.model == "claude-sonnet-4"
     assert len(run.trajectories) == 1
-    assert run.trajectories[0].run_id == "test-run-1"
+    assert run.trajectories[0].sample == "1"
 
 
 def test_run_validation_empty_trajectories():
@@ -53,7 +52,6 @@ def test_run_serialization():
         model="claude-sonnet-4",
         trajectories=[
             Trajectory(
-                run_id="test-run-1",
                 sample="1",
                 messages=[
                     UserMessage(position=0, content="Test message"),
@@ -66,18 +64,18 @@ def test_run_serialization():
 
     run_dict = run.model_dump()
 
-    assert run_dict["run_id"] == "test-run-1"
+    assert run_dict["id"] == "test-run-1"
     assert run_dict["task"] == "test-task"
     assert run_dict["model"] == "claude-sonnet-4"
     assert len(run_dict["trajectories"]) == 1
-    assert run_dict["trajectories"][0]["run_id"] == "test-run-1"
     assert run_dict["trajectories"][0]["sample"] == "1"
+    # Verify run_id is not in the trajectory
+    assert "run_id" not in run_dict["trajectories"][0]
 
 
-def test_trajectory_without_task_and_model():
-    """Test that client Trajectory doesn't have task and model fields."""
+def test_trajectory_without_task_model_or_run_id():
+    """Test that client Trajectory is pure execution trace without relational fields."""
     trajectory = Trajectory(
-        run_id="test-run-1",
         sample="1",
         messages=[
             UserMessage(position=0, content="Test message"),
@@ -86,15 +84,20 @@ def test_trajectory_without_task_and_model():
         metadata={},
     )
 
-    # Verify task and model are not in the model
+    # Verify relational fields are not in the model
     assert not hasattr(trajectory, "task")
     assert not hasattr(trajectory, "model")
+    assert not hasattr(trajectory, "run_id")
 
-    # Verify serialization doesn't include task/model
+    # Verify serialization doesn't include relational fields
     traj_dict = trajectory.model_dump()
     assert "task" not in traj_dict
     assert "model" not in traj_dict
-    assert traj_dict["run_id"] == "test-run-1"
+    assert "run_id" not in traj_dict
+    # Verify it has the execution trace fields
+    assert traj_dict["sample"] == "1"
+    assert "messages" in traj_dict
+    assert "scores" in traj_dict
 
 
 if __name__ == "__main__":

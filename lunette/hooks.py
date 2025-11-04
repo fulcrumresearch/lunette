@@ -1,7 +1,7 @@
 """Inspect AI hooks for auto-saving runs."""
 
 import logging
-from datetime import datetime, timezone
+import uuid
 from pathlib import Path
 
 from inspect_ai.hooks import Hooks, SampleEnd, TaskEnd, TaskStart, hooks
@@ -59,9 +59,8 @@ class LunetteLoggerHook(Hooks):
         self.task = data.spec.task
         self.model = data.spec.model
 
-        # Generate run ID from task, model, and timestamp
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        self.run_id = f"{self.task}_{self.model}_{timestamp}"
+        # Generate unique run ID
+        self.run_id = str(uuid.uuid4())
 
         self.trajectories = []
 
@@ -81,7 +80,6 @@ class LunetteLoggerHook(Hooks):
 
         try:
             trajectory = Trajectory.from_inspect(
-                run_id=self.run_id,
                 sample=data.sample,
             )
 
