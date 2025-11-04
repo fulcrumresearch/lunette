@@ -243,9 +243,9 @@ class LunetteClient:
 
         # Validate all trajectories belong to this run
         for traj in run.trajectories:
-            if traj.run_id != run.run_id:
+            if traj.run_id != run.id:
                 raise ValueError(
-                    f"Trajectory run_id '{traj.run_id}' does not match run run_id '{run.run_id}'"
+                    f"Trajectory run_id '{traj.run_id}' does not match run run_id '{run.id}'"
                 )
 
         # Serialize run to JSON

@@ -9,7 +9,7 @@ from lunette.models.messages import UserMessage, AssistantMessage
 def test_run_creation():
     """Test creating a Run with trajectories."""
     run = Run(
-        run_id="test-run-1",
+        id="test-run-1",
         task="test-task",
         model="claude-sonnet-4",
         trajectories=[
@@ -26,7 +26,7 @@ def test_run_creation():
         ],
     )
 
-    assert run.run_id == "test-run-1"
+    assert run.id == "test-run-1"
     assert run.task == "test-task"
     assert run.model == "claude-sonnet-4"
     assert len(run.trajectories) == 1
@@ -36,7 +36,7 @@ def test_run_creation():
 def test_run_validation_empty_trajectories():
     """Test that Run can be created with empty trajectories (validation happens in client)."""
     run = Run(
-        run_id="test-run-1",
+        id="test-run-1",
         task="test-task",
         model="claude-sonnet-4",
         trajectories=[],
@@ -48,7 +48,7 @@ def test_run_validation_empty_trajectories():
 def test_run_serialization():
     """Test Run serialization to dict."""
     run = Run(
-        run_id="test-run-1",
+        id="test-run-1",
         task="test-task",
         model="claude-sonnet-4",
         trajectories=[

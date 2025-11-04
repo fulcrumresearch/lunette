@@ -13,7 +13,7 @@ class Run(BaseModel):
     All trajectories in a run share the same task and model.
     """
 
-    run_id: str
+    id: str
     """Unique identifier for this evaluation run."""
 
     task: str

@@ -111,7 +111,7 @@ class LunetteLoggerHook(Hooks):
 
         try:
             run = Run(
-                run_id=self.run_id,
+                id=self.run_id,
                 task=self.task,
                 model=self.model,
                 trajectories=self.trajectories,
