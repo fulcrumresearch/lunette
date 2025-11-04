@@ -20,5 +20,5 @@ dev = [
     "pytest>=8.4.2",
 ]
 
-[project.entry-points."inspect_ai"]
+[project.entry-points.inspect_ai]
 lunette = "lunette._registry"
