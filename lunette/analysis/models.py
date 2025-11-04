@@ -73,11 +73,11 @@ class AnalysisPlan(BaseModel):
         return yaml.dump(data, sort_keys=False, default_flow_style=False)
 
     @classmethod
-    def from_yaml_file(cls, path: str | Path) -> "AnalysisPlan":
-        """Load plan from YAML file.
+    def from_yaml(cls, yaml_str: str) -> "AnalysisPlan":
+        """Load plan from YAML string.
 
         Args:
-            path: Path to YAML file
+            yaml_str: YAML string representation of the plan
 
         Returns:
             AnalysisPlan instance
@@ -86,7 +86,6 @@ class AnalysisPlan(BaseModel):
             yaml.YAMLError: If YAML is invalid
             pydantic.ValidationError: If data doesn't match schema
         """
-        yaml_str = Path(path).read_text()
         data = yaml.safe_load(yaml_str)
         return cls.model_validate(data)
 
