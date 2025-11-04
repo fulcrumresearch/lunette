@@ -5,10 +5,13 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from inspect_ai.model import (
-    ChatMessageAssistant,
-    ChatMessageSystem,
-    ChatMessageTool,
-    ChatMessageUser,
+    ChatMessageAssistant as InspectAssistantMessage,
+    ChatMessageSystem as InspectSystemMessage,
+    ChatMessageTool as InspectToolMessage,
+    ChatMessageUser as InspectUserMessage,
+    Content as InspectContent,
+    ContentReasoning as InspectReasoning,
+    ContentText as InspectText,
 )
 from inspect_ai.tool import ToolCall as InspectToolCall
 
@@ -22,6 +25,11 @@ class Text(BaseModel):
     type: Literal["text"] = "text"
     text: str
 
+    @classmethod
+    def from_inspect(cls, content: InspectText) -> Text:
+        """Convert an Inspect AI `ContentText` to our `Text` model."""
+        return cls(text=content.text)
+
 
 class Reasoning(BaseModel):
     """
@@ -33,8 +41,38 @@ class Reasoning(BaseModel):
     type: Literal["reasoning"] = "reasoning"
     reasoning: str
 
+    @classmethod
+    def from_inspect(cls, content: InspectReasoning) -> Reasoning:
+        """Convert an Inspect AI `ContentReasoning` to our `Reasoning` model."""
+        return cls(reasoning=content.reasoning)
+
 
 Content = Text | Reasoning
+
+
+def _content_from_inspect(content: str | list[InspectContent]) -> str | list[Content]:
+    """
+    Convert Inspect AI content to Lunette content.
+
+    Args:
+        content: Either a string or a list of Inspect content items
+
+    Returns:
+        Either a string (unchanged) or a list of Lunette Content items
+    """
+    if isinstance(content, str):
+        return content
+
+    result: list[Content] = []
+    for item in content:
+        match item:
+            case InspectText():
+                result.append(Text.from_inspect(item))
+            case InspectReasoning():
+                result.append(Reasoning.from_inspect(item))
+            # we ignore other content types for now
+
+    return result
 
 
 ## tool call ##
@@ -87,9 +125,11 @@ class SystemMessage(BaseMessage):
     role: Literal["system"] = "system"
 
     @classmethod
-    def from_inspect(cls, position: int, message: ChatMessageSystem) -> SystemMessage:
+    def from_inspect(
+        cls, position: int, message: InspectSystemMessage
+    ) -> SystemMessage:
         """Convert an Inspect AI `ChatMessageSystem` to `SystemMessage`."""
-        return cls(position=position, content=message.content)
+        return cls(position=position, content=_content_from_inspect(message.content))
 
 
 class UserMessage(BaseMessage):
@@ -98,9 +138,9 @@ class UserMessage(BaseMessage):
     role: Literal["user"] = "user"
 
     @classmethod
-    def from_inspect(cls, position: int, message: ChatMessageUser) -> UserMessage:
+    def from_inspect(cls, position: int, message: InspectUserMessage) -> UserMessage:
         """Convert an Inspect AI `ChatMessageUser` to `UserMessage`."""
-        return cls(position=position, content=message.content)
+        return cls(position=position, content=_content_from_inspect(message.content))
 
 
 class AssistantMessage(BaseMessage):
@@ -111,7 +151,7 @@ class AssistantMessage(BaseMessage):
 
     @classmethod
     def from_inspect(
-        cls, position: int, message: ChatMessageAssistant
+        cls, position: int, message: InspectAssistantMessage
     ) -> AssistantMessage:
         """Convert an Inspect AI `ChatMessageAssistant` to `AssistantMessage`."""
         tool_calls = (
@@ -122,7 +162,7 @@ class AssistantMessage(BaseMessage):
 
         return cls(
             position=position,
-            content=message.content,
+            content=_content_from_inspect(message.content),
             tool_calls=tool_calls,
         )
 
@@ -141,7 +181,7 @@ class ToolMessage(BaseMessage):
     def from_inspect(
         cls,
         position: int,
-        message: ChatMessageTool,
+        message: InspectToolMessage,
         tool_call: ToolCall,
     ) -> ToolMessage:
         """
