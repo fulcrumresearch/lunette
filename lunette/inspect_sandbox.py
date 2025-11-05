@@ -231,6 +231,17 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
     ) -> ExecResult[str]:
         # ignoring a bunch of shit
 
+
+        from inspect_ai.solver._task_state import sample_state
+
+        if not hasattr(self, '_metadata_set'):  
+            state = sample_state()  
+            if state.metadata is None:  
+                state.metadata = {}  
+            state.metadata["lunette_sandbox_id"] = self.sandbox.container_id  
+            self._metadata_set = True  
+
+
         stdin_redir = ""
         cleanup = ""
         prefix = _env_prefix(env)
