@@ -1,9 +1,9 @@
 """Tests for the Run model and client integration."""
 
 import pytest
+from lunette.models.messages import AssistantMessage, UserMessage
 from lunette.models.run import Run
-from lunette.models.trajectory import Trajectory, ScalarScore
-from lunette.models.messages import UserMessage, AssistantMessage
+from lunette.models.trajectory import ScalarScore, Trajectory
 
 
 def test_run_creation():
@@ -20,7 +20,6 @@ def test_run_creation():
                     AssistantMessage(position=1, content="Test response"),
                 ],
                 scores={"main": ScalarScore(value=1.0)},
-                metadata={},
             ),
         ],
     )
@@ -57,7 +56,6 @@ def test_run_serialization():
                     UserMessage(position=0, content="Test message"),
                 ],
                 scores={"main": ScalarScore(value=1.0)},
-                metadata={},
             ),
         ],
     )
