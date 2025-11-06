@@ -135,7 +135,7 @@ class LunetteClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=self.timeout,
-            headers={"Authorization": f"Bearer {self.api_key}"},
+            headers={"X-API-Key": self.api_key},
         )
 
     async def create_sandbox(
