@@ -13,8 +13,8 @@ class Run(BaseModel):
     All trajectories in a run share the same task and model.
     """
 
-    id: str
-    """Unique identifier for this evaluation run."""
+    id: str | None = None
+    """Optional server-assigned run ID. If None, server generates a UUID. If provided, appends to existing run."""
 
     task: str
     """Task name for this run (e.g., 'math-eval', 'swe-bench')."""

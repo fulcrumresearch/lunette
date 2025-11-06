@@ -47,7 +47,6 @@ class LunetteLoggerHook(Hooks):
         self.client = LunetteClient()
         self.task: str | None = None
         self.model: str | None = None
-        self.run_id: str | None = None
         self.trajectories: list[Trajectory] = []
 
     async def on_task_start(self, data: TaskStart) -> None:
@@ -58,14 +57,10 @@ class LunetteLoggerHook(Hooks):
         """
         self.task = data.spec.task
         self.model = data.spec.model
-
-        # Generate unique run ID
-        self.run_id = str(uuid.uuid4())
-
         self.trajectories = []
 
         logger.info(
-            f"Starting run {self.run_id} for task '{self.task}' with model '{self.model}'"
+            f"Starting task '{self.task}' with model '{self.model}'"
         )
 
     async def on_sample_end(self, data: SampleEnd) -> None:
@@ -74,8 +69,8 @@ class LunetteLoggerHook(Hooks):
         Args:
             data: Sample end data containing the completed sample
         """
-        if self.task is None or self.model is None or self.run_id is None:
-            logger.error("Task, model, or run_id not set - skipping trajectory buffer")
+        if self.task is None:
+            logger.error("Task not set - skipping trajectory buffer")
             return
 
         try:
@@ -100,16 +95,15 @@ class LunetteLoggerHook(Hooks):
             data: Task end data
         """
         if not self.trajectories:
-            logger.warning(f"No trajectories to save for run {self.run_id}")
+            logger.warning("No trajectories to save")
             return
 
-        if self.task is None or self.model is None or self.run_id is None:
-            logger.error("Task, model, or run_id not set - cannot save run")
+        if self.task is None:
+            logger.error("Task not set - cannot save run")
             return
 
         try:
             run = Run(
-                id=self.run_id,
                 task=self.task,
                 model=self.model,
                 trajectories=self.trajectories,
@@ -122,4 +116,4 @@ class LunetteLoggerHook(Hooks):
             )
 
         except Exception as e:
-            logger.error(f"Failed to save run {self.run_id}: {e}")
+            logger.error(f"Failed to save run: {e}")
