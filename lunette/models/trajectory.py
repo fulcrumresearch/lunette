@@ -72,20 +72,26 @@ class ScalarScore(BaseModel):
 
 
 class Trajectory(BaseModel):
-    """A single agent execution trace on an Inspect sample."""
+    """A single agent execution trace on an Inspect sample.
 
-    # sample-specific
-    task: str  # must be extracted from an Inspect AI `EvalSpec`
-    sample: int | str  # Inspect sample ID
+    Trajectories are grouped into Runs, which provide task and model context.
+    A trajectory represents one sample's execution trace.
+    """
 
-    # trajectory-specific
-    model: str  # must be extracted from an Inspect AI `EvalSpec`
+    sample: int | str
+    """Inspect sample ID - identifies which sample this trajectory is for."""
+
     messages: list[Message]
-    scores: dict[str, ScalarScore] | None = None
+    """Sequence of messages (System, User, Assistant, Tool) in this execution."""
 
-    # metadata
+    scores: dict[str, ScalarScore] | None = None
+    """Multi-metric scores for this trajectory, if available."""
+
     metadata: dict[str, Any] = Field(default_factory=dict)
+    """Additional metadata about this trajectory execution."""
+
     solution: str | None = None
+    """Optional solution or patch produced by the agent."""
 
     @computed_field
     @property
@@ -97,8 +103,15 @@ class Trajectory(BaseModel):
         return score.value
 
     @classmethod
-    def from_inspect(cls, task: str, model: str, sample: EvalSample) -> Trajectory:
-        """Convert an Inspect AI `EvalSample` to a `Trajectory`."""
+    def from_inspect(cls, sample: EvalSample) -> Trajectory:
+        """Convert an Inspect AI `EvalSample` to a `Trajectory`.
+
+        Args:
+            sample: The Inspect AI sample to convert
+
+        Returns:
+            Trajectory object containing the sample's execution trace
+        """
 
         # fail fast if the sample has an error
         if sample.error:
@@ -149,9 +162,7 @@ class Trajectory(BaseModel):
         solution: str | None = sample.metadata.get("patch", None)
 
         return cls(
-            task=task,
             sample=sample.id,
-            model=model,
             messages=messages,
             scores=scores,
             metadata=sample.metadata,

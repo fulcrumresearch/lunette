@@ -1,11 +1,13 @@
-"""Inspect AI hooks for auto-saving trajectories."""
+"""Inspect AI hooks for auto-saving runs."""
 
 import logging
+import uuid
 from pathlib import Path
 
-from inspect_ai.hooks import Hooks, SampleEnd, TaskStart, hooks
+from inspect_ai.hooks import Hooks, SampleEnd, TaskEnd, TaskStart, hooks
 
 from lunette.client import LunetteClient
+from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
 
 # Ensure log directory exists
@@ -24,23 +26,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@hooks(name="lunette_logger", description="Auto-save trajectories to backend")
+@hooks(name="lunette_logger", description="Auto-save evaluation runs to backend")
 class LunetteLoggerHook(Hooks):
-    """
-    Hook that automatically saves trajectories to the backend at task end.
+    """Hook that automatically saves evaluation runs to the backend.
 
-    This hook:
-    1. Converts all samples from the task log to Trajectory objects
-    2. Batches them together
-    3. POSTs them to the backend /save endpoint
-    4. Handles errors gracefully without breaking the evaluation
+    This hook buffers all trajectory samples as they complete during an evaluation,
+    then uploads the complete Run (with all trajectories) at task end.
+
+    The Run is uploaded as a single atomic operation, ensuring all trajectories
+    from an evaluation are grouped together.
 
     Configuration:
-        The hook uses LunetteClient which reads from ~/.lunette/config.json
-        or environment variables:
+        Uses LunetteClient which reads from ~/.lunette/config.json or environment:
         - LUNETTE_BACKEND_URL: Backend API URL
         - LUNETTE_API_KEY: API key for authentication
-        - LUNETTE_BATCH_SIZE: Number of trajectories per batch (default: 10)
     """
 
     def __init__(self):
@@ -48,42 +47,73 @@ class LunetteLoggerHook(Hooks):
         self.client = LunetteClient()
         self.task: str | None = None
         self.model: str | None = None
+        self.trajectories: list[Trajectory] = []
 
     async def on_task_start(self, data: TaskStart) -> None:
-        """
-        Called when a task starts. Stores task and model info for later use.
+        """Called when a task starts. Initializes run metadata.
 
         Args:
             data: Task start data containing the eval spec
         """
         self.task = data.spec.task
         self.model = data.spec.model
-        logger.info(f"Starting task '{self.task}' with model '{self.model}'")
+        self.trajectories = []
+
+        logger.info(
+            f"Starting task '{self.task}' with model '{self.model}'"
+        )
 
     async def on_sample_end(self, data: SampleEnd) -> None:
-        """
-        Called when a sample completes. Saves the trajectory to the backend.
+        """Called when a sample completes. Buffers the trajectory.
 
         Args:
             data: Sample end data containing the completed sample
         """
-        if self.task is None or self.model is None:
-            logger.error("Task or model not set - skipping trajectory save")
+        if self.task is None:
+            logger.error("Task not set - skipping trajectory buffer")
             return
 
         try:
             trajectory = Trajectory.from_inspect(
-                task=self.task,
-                model=self.model,
                 sample=data.sample,
             )
 
-            saved = await self.client.save_trajectories(
-                [trajectory]
-            )  # todo: check return type here, also add batching
-
-            if saved:
-                logger.info(f"Saved trajectory for sample {trajectory.sample}")
+            self.trajectories.append(trajectory)
+            logger.info(
+                f"Buffered trajectory for sample {trajectory.sample} ({len(self.trajectories)} total)"
+            )
 
         except Exception as e:
-            logger.error(f"Failed to save trajectory for sample {data.sample_id}: {e}")
+            logger.error(
+                f"Failed to buffer trajectory for sample {data.sample_id}: {e}"
+            )
+
+    async def on_task_end(self, data: TaskEnd) -> None:
+        """Called when a task completes. Uploads the complete run.
+
+        Args:
+            data: Task end data
+        """
+        if not self.trajectories:
+            logger.warning("No trajectories to save")
+            return
+
+        if self.task is None:
+            logger.error("Task not set - cannot save run")
+            return
+
+        try:
+            run = Run(
+                task=self.task,
+                model=self.model,
+                trajectories=self.trajectories,
+            )
+
+            result = await self.client.save_run(run)
+
+            logger.info(
+                f"Saved run {result['run_id']} with {len(result['trajectory_ids'])} trajectories"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to save run: {e}")

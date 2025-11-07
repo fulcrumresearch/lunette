@@ -19,5 +19,10 @@ include = ["lunette*"]
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals.git" }
 
-[project.entry-points."inspect_ai"]
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
+
+[project.entry-points.inspect_ai]
 lunette = "lunette._registry"

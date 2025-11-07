@@ -9,7 +9,7 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
-from lunette.models.trajectory import Trajectory
+from lunette.models.run import Run
 from lunette.sandbox import Sandbox
 
 
@@ -135,7 +135,7 @@ class LunetteClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=self.timeout,
-            headers={"Authorization": f"Bearer {self.api_key}"},
+            headers={"X-API-Key": self.api_key},
         )
 
     async def create_sandbox(
@@ -218,22 +218,32 @@ class LunetteClient:
             service=service,
         )
 
-    async def save_trajectories(self, trajectories: List[Trajectory]) -> List[str]:
-        """Save trajectories to the backend.
+    async def save_run(self, run: Run) -> dict:
+        """Save an evaluation run with all its trajectories to the backend.
+
+        This is the primary method for uploading evaluation results. A run represents
+        a single execution of an evaluation (e.g., `inspect eval`) that produces
+        multiple trajectory samples for the same task and model.
 
         Args:
-            trajectories: List of Trajectory objects to save
+            run: Run object containing id, task, model, and list of trajectories
 
         Returns:
-            List of saved trajectory IDs
+            dict with:
+                - run_id: str - The ID of the saved run
+                - trajectory_ids: list[str] - IDs of all saved trajectories
 
         Raises:
             httpx.HTTPError: For HTTP-related errors
+            ValueError: If run validation fails
         """
-        # Convert trajectories to dict for JSON serialization
-        trajectory_dicts = [traj.model_dump() for traj in trajectories]
+        if not run.trajectories:
+            raise ValueError("Cannot save run with empty trajectory list")
 
-        response = await self._client.post("/trajectories/save", json=trajectory_dicts)
+        # Serialize run to JSON
+        run_dict = run.model_dump()
+
+        response = await self._client.post("/runs/save", json=run_dict)
         response.raise_for_status()
         return response.json()
 
