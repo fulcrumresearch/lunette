@@ -33,18 +33,27 @@ class Text(BaseModel):
 
 class Reasoning(BaseModel):
     """
-    Reasoning content. Only used for models in the Claude family, according to the Inspect AI documentation.
+    Reasoning content from models with explicit reasoning capability.
 
-    See the specification for [thinking blocks](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#understanding-thinking-blocks) for Claude models.
+    Used by Claude (extended thinking) and OpenAI (reasoning models like GPT-5).
+    See [Claude thinking blocks](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#understanding-thinking-blocks).
     """
 
     type: Literal["reasoning"] = "reasoning"
     reasoning: str
+    summary: str | None = None
+    signature: str | None = None
+    redacted: bool = True  # Conservative default: don't display unless explicitly safe
 
     @classmethod
     def from_inspect(cls, content: InspectReasoning) -> Reasoning:
         """Convert an Inspect AI `ContentReasoning` to our `Reasoning` model."""
-        return cls(reasoning=content.reasoning)
+        return cls(
+            reasoning=content.reasoning,
+            summary=content.summary,
+            signature=content.signature,
+            redacted=content.redacted,
+        )
 
 
 Content = Text | Reasoning
@@ -110,13 +119,25 @@ class BaseMessage(BaseModel):
 
     @property
     def text(self) -> str:
-        """Get the text content of this message."""
+        """Get the text content of this message (excludes redacted reasoning)."""
         if isinstance(self.content, str):
             return self.content
-        else:
-            return "\n".join(
-                [content.text for content in self.content if hasattr(content, "text")]
-            )
+
+        parts = []
+        for content in self.content:
+            if isinstance(content, Text):
+                parts.append(content.text)
+            elif isinstance(content, Reasoning):
+                # For reasoning blocks:
+                # - If summary exists, use it (human-readable)
+                # - If explicitly not redacted, use reasoning (human-readable, e.g., Claude extended thinking)
+                # - Otherwise skip (encrypted signature or unknown)
+                if content.summary:
+                    parts.append(content.summary)
+                elif content.redacted is False:
+                    parts.append(content.reasoning)
+
+        return "\n".join(parts)
 
 
 class SystemMessage(BaseMessage):
