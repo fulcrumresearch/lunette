@@ -282,12 +282,10 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
     ) -> None:
         # Create temporary local file
         with tempfile.NamedTemporaryFile(
-            mode="w" if text else "wb", delete=False
+            mode="wb", delete=False
         ) as tmp:
-            if isinstance(contents, bytes):
-                if text:
-                    contents = contents.decode("utf-8")
-                tmp.write(contents if isinstance(contents, str) else contents)
+            if isinstance(contents, str):
+                tmp.write(contents.encode("utf-8"))
             else:
                 tmp.write(contents)
             tmp_path = tmp.name
@@ -334,7 +332,7 @@ def resolve_config_environment(
     if isinstance(config, str) and Path(config).exists():
         # read the config file
         config_file = config
-        with open(config, "r") as f:
+        with open(config, "r", encoding="utf-8") as f:
             config_text = f.read()
 
         # only add metadata files if the key is in the file

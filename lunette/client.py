@@ -19,7 +19,7 @@ def _read_dockerignore(build_dir: Path) -> List[str]:
         return []
     # very light parsing: non-empty, non-comment lines as glob patterns
     rules = []
-    for line in p.read_text().splitlines():
+    for line in p.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#"):
             rules.append(line)
@@ -106,7 +106,7 @@ class LunetteClient:
             config_data = {}
         else:
             try:
-                with open(config_path, "r") as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     config_data = json.load(f)
             except json.JSONDecodeError as e:
                 raise json.JSONDecodeError(

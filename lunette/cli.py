@@ -10,7 +10,7 @@ from lunette.client import LunetteClient
 
 async def investigate_command(plan_file: Path, limit: int):
     """Run investigation command."""
-    with open(plan_file) as f:
+    with open(plan_file, "r", encoding="utf-8") as f:
         plan = f.read()
 
     async with LunetteClient() as client:
