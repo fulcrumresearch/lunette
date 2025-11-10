@@ -4,8 +4,6 @@ version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
     "inspect-ai",
-    "inspect-evals[swe-bench]",
-    "openai>=2.6.1",
     "httpx>=0.27.0",
     "pyyaml>=6.0",
 ]
@@ -22,6 +20,8 @@ inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals.git" 
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
+    "inspect-evals[swe-bench]",
+    "openai>=2.6.1",
 ]
 
 [project.entry-points.inspect_ai]
