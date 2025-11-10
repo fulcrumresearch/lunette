@@ -1,0 +1,118 @@
+# Lunette
+
+Lunette is a platform for understanding agents and evals through investigator agents. With Lunette, you can spin up investigator agents that read your agent traces and execute code in your agents’ environments. These investigators surface issues, which are checked by critics to mitigate hallucinations. Lunette allows users to better understand what their evals are measuring. Check out our [demo](https://demo.fulcrumresearch.ai/home) or book a [time to chat](https://cal.com/kaivu/30min).
+
+Lunette is currently in beta, and quickly getting many improvements. Feel free to suggest things!
+
+![lunette flow](lunette-flow.png)
+
+## Installation
+
+```bash
+pip install lunette-sdk
+```
+
+Or with uv:
+
+```bash
+uv add lunette-sdk
+```
+
+## Quick Start
+
+### 1. Get Your API Key
+
+Visit [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai) to sign up and get your API key.
+
+### 2. Configure Lunette
+
+Create a configuration file at `~/.lunette/config.json`:
+
+```json
+{
+  "api_key": "your-api-key-here",
+}
+```
+
+### 3. Run Your Evaluation
+
+Run your Inspect AI evaluation with the Lunette sandbox:
+
+```bash
+inspect eval your_task.py --sandbox lunette
+```
+
+That's it! Your trajectories will automatically be logged to the Fulcrum platform, where you can:
+- Browse and visualize agent trajectories
+- Analyze performance across multiple runs
+- Launch automated investigations to identify patterns and issues
+
+### Programmatic API
+
+You can also use Lunette programmatically to upload trajectories:
+
+```python
+from lunette import LunetteClient, Run, Trajectory
+
+async with LunetteClient() as client:
+    run = Run(
+        run_id="unique-run-id",
+        task="your-task-name",
+        model="your-model-name",
+        trajectories=[trajectory1, trajectory2, ...]
+    )
+    await client.save_run(run)
+```
+
+We are currently adding support for various trajectory formats. The core `Trajectory` type signature is:
+
+```python
+class Trajectory(BaseModel):
+    sample: int | str  # Sample ID
+    messages: list[Message]  # Execution trace (System, User, Assistant, Tool messages)
+    scores: dict[str, ScalarScore] | None  # Multi-metric scores
+    metadata: dict[str, Any]  # Additional metadata
+    solution: str | None  # Optional solution/patch
+```
+
+See the full data model in [lunette/models/](https://github.com/fulcrum-research/lunette/tree/main/lunette/lunette/models)
+
+We will document this more and improve the non-inspect SDK soon.
+
+### Converting from Inspect AI
+
+Lunette provides utilities to convert Inspect AI `EvalSample` objects to the standard `Trajectory` format:
+
+```python
+from lunette import Trajectory
+
+trajectory = Trajectory.from_inspect(run_id="my-run", sample=eval_sample)
+```
+
+## Investigations
+
+Users provide Lunette with investigation specs for agents or evals they want to understand. Lunette then launches investigator agents that operate in parallel. For each trajectory, an investigator agent reads the agent trace, modifies and runs commands in the eval environment to test hypotheses, and writes findings. Validator agents then critique these findings and filter for high-quality results. At the end, users can explore investigation results in the Fulcrum frontend and chat with an agent to learn more.
+
+To launch an investigation, you can use the web UI or define an investigation plan in YAML:
+
+```yaml
+name: "My Investigation"
+type: "investigation"
+agents:
+  - name: "default-investigator"
+    prompt: "Look for patterns in tool usage and identify potential failures"
+trajectory_filters:
+  filters:
+    task: "my-task-name"
+    score: 0.0
+```
+
+Save this as `investigation-plan.yaml`, then run:
+
+```bash
+lunette investigate investigation-plan.yaml
+```
+
+You can optionally pass `--limit N` to investigate only the first N matching trajectories.
+
+Issues will start streaming in and you can see your investigations as they go.

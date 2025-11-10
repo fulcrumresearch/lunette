@@ -120,7 +120,7 @@ class LunetteClient:
 
         # Use explicit params or fall back to config file
         self.base_url = base_url or config_data.get(
-            "base_url", "http://localhost:8000/api"
+            "base_url", "https://app.fulcrumresearch.ai"
         )
         self.api_key = api_key or config_data.get("api_key", "___")
         self.timeout = timeout or config_data.get("timeout", 200)
