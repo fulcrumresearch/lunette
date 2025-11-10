@@ -95,4 +95,4 @@ class AnalysisPlan(BaseModel):
         Args:
             path: Path to save YAML file
         """
-        Path(path).write_text(self.to_yaml())
+        Path(path).write_text(self.to_yaml(), encoding="utf-8")

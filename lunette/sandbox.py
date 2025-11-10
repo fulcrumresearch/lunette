@@ -1,5 +1,7 @@
 """Lunette SDK Sandbox operations."""
 
+import base64
+
 import httpx
 from typing import TYPE_CHECKING, Optional
 
@@ -134,17 +136,26 @@ class Sandbox:
                 f"Sandbox {self.container_id} has been destroyed"
             )
 
-        # Read local file
+        # Read local file as bytes
         try:
-            with open(local_path, "r") as f:
-                content = f.read()
+            with open(local_path, "rb") as f:
+                content_bytes = f.read()
         except FileNotFoundError:
             raise FileNotFoundError(f"Local file not found: {local_path}")
+
+        # Try UTF-8 first, fall back to base64 for binary data
+        try:
+            content_str = content_bytes.decode("utf-8")
+            encoding = "utf-8"
+        except UnicodeDecodeError:
+            # Binary data - use base64
+            content_str = base64.b64encode(content_bytes).decode("ascii")
+            encoding = "base64"
 
         # POST to write endpoint
         response = await self.client._client.post(
             f"/sandboxes/{self.container_id}/write",
-            json={"path": remote_path, "content": content},
+            json={"path": remote_path, "content": content_str, "encoding": encoding},
         )
 
         response.raise_for_status()
@@ -183,10 +194,17 @@ class Sandbox:
 
         result = response.json()
         content = result["content"]
+        encoding = result.get("encoding", "utf-8")
 
-        # Write to local file
-        with open(local_path, "w") as f:
-            f.write(content)
+        # Decode based on encoding
+        if encoding == "base64":
+            content_bytes = base64.b64decode(content)
+        else:
+            content_bytes = content.encode("utf-8")
+
+        # Write to local file as bytes
+        with open(local_path, "wb") as f:
+            f.write(content_bytes)
 
     async def destroy(self) -> None:
         """Destroy the sandbox and clean up resources.
