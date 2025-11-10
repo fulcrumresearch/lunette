@@ -26,3 +26,6 @@ dev = [
 
 [project.entry-points.inspect_ai]
 lunette = "lunette._registry"
+
+[project.scripts]
+lunette = "lunette.cli:main"

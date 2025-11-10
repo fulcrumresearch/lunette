@@ -247,6 +247,27 @@ class LunetteClient:
         response.raise_for_status()
         return response.json()
 
+    async def launch_investigation(self, plan: str, limit: int = 10) -> dict:
+        """Launch an investigation using a plan YAML.
+
+        Args:
+            plan: Investigation plan in YAML format
+            limit: Maximum number of trajectories to investigate (default: 10)
+
+        Returns:
+            dict with investigation results
+
+        Raises:
+            httpx.HTTPError: For HTTP-related errors
+        """
+        response = await self._client.post(
+            "/investigations/run",
+            json={"plan": plan, "limit": limit},
+            timeout=None,
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def close(self) -> None:
         """Close the HTTP client and clean up resources."""
         await self._client.aclose()
