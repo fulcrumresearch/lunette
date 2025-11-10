@@ -6,9 +6,12 @@ import httpx
 from typing import TYPE_CHECKING, Optional
 
 from inspect_ai.util._sandbox.docker.service import ComposeService
+from lunette.logger import get_lunette_logger
 
 if TYPE_CHECKING:
     from lunette.client import LunetteClient
+
+logger = get_lunette_logger(__name__)
 
 
 class SandboxDestroyedError(Exception):
@@ -100,6 +103,8 @@ class Sandbox:
                 f"Sandbox {self.container_id} has been destroyed"
             )
 
+        logger.debug(f"[{self.container_id}] Executing command: {cmd}")
+
         # Make HTTP POST to /sandboxes/{container_id}/exec
         response = await self.client._client.post(
             f"/sandboxes/{self.container_id}/exec", json={"command": cmd}
@@ -108,12 +113,22 @@ class Sandbox:
         response.raise_for_status()
         result = response.json()
 
-        return ExecResult(
+        exec_result = ExecResult(
             stdout=result["stdout"],
             stderr=result["stderr"],
             exit_code=result["exit_code"],
             success=(result["exit_code"] == 0),
         )
+
+        # Log the result
+        if exec_result.success:
+            logger.debug(f"[{self.container_id}] Command succeeded (exit_code={exec_result.exit_code})")
+        else:
+            logger.warning(f"[{self.container_id}] Command failed (exit_code={exec_result.exit_code})")
+            if exec_result.stderr:
+                logger.warning(f"[{self.container_id}] stderr: {exec_result.stderr[:500]}")
+
+        return exec_result
 
     async def aupload(
         self,
@@ -135,6 +150,8 @@ class Sandbox:
             raise SandboxDestroyedError(
                 f"Sandbox {self.container_id} has been destroyed"
             )
+
+        logger.debug(f"[{self.container_id}] Uploading file: {local_path} -> {remote_path}")
 
         # Read local file as bytes
         try:
@@ -159,6 +176,7 @@ class Sandbox:
         )
 
         response.raise_for_status()
+        logger.info(f"[{self.container_id}] Successfully uploaded file to {remote_path}")
 
     async def adownload(
         self,
@@ -180,6 +198,8 @@ class Sandbox:
             raise SandboxDestroyedError(
                 f"Sandbox {self.container_id} has been destroyed"
             )
+
+        logger.debug(f"[{self.container_id}] Downloading file: {remote_path} -> {local_path}")
 
         # GET from read endpoint
         try:
@@ -205,6 +225,8 @@ class Sandbox:
         # Write to local file as bytes
         with open(local_path, "wb") as f:
             f.write(content_bytes)
+
+        logger.info(f"[{self.container_id}] Successfully downloaded file to {local_path}")
 
     async def destroy(self) -> None:
         """Destroy the sandbox and clean up resources.

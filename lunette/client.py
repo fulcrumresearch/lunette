@@ -11,6 +11,9 @@ from inspect_ai.util._sandbox.docker.service import ComposeService
 
 from lunette.models.run import Run
 from lunette.sandbox import Sandbox
+from lunette.logger import get_lunette_logger
+
+logger = get_lunette_logger(__name__)
 
 
 def _read_dockerignore(build_dir: Path) -> List[str]:
@@ -162,6 +165,7 @@ class LunetteClient:
 
         if "image" in service and service["image"]:
             image_name = service["image"]
+            logger.info(f"Creating sandbox from image: {image_name}")
 
         if "build" in service and service["build"]:
             # Build path: create tar of build context
@@ -176,6 +180,8 @@ class LunetteClient:
 
             if build_dir is None or not build_dir.exists() or not build_dir.is_dir():
                 raise FileNotFoundError(f"Build context not found: {build_dir}")
+
+            logger.info(f"Creating sandbox from build context: {build_dir}")
 
             # Create tar of build context
             with tempfile.NamedTemporaryFile(suffix=".tar", delete=False) as tmp:
@@ -211,12 +217,16 @@ class LunetteClient:
             tar_file.close()
             Path(tar_file.name).unlink(missing_ok=True)
 
-        return Sandbox(
+        sandbox = Sandbox(
             client=self,
             tag=result["tag"],
             container_id=result["sandbox_id"],
             service=service,
         )
+
+        logger.info(f"Successfully created sandbox: {sandbox.container_id}")
+
+        return sandbox
 
     async def save_run(self, run: Run) -> dict:
         """Save an evaluation run with all its trajectories to the backend.

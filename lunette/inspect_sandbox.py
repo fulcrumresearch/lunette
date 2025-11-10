@@ -1,7 +1,6 @@
 import os
 import shlex
 import tempfile
-from logging import getLogger
 from pathlib import Path
 from typing import Literal, NamedTuple, Union, overload, Dict
 
@@ -33,8 +32,9 @@ from inspect_ai.util._sandbox.docker.util import ComposeProject, task_project_na
 
 from lunette.client import LunetteClient
 from lunette.sandbox import Sandbox
+from lunette.logger import get_lunette_logger
 
-logger = getLogger(__name__)
+logger = get_lunette_logger(__name__)
 
 
 def _env_prefix(env: Dict[str, str]) -> str:
@@ -84,8 +84,6 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
 
             if len(services) > 1:
                 raise ValueError("Only one service is allowed")
-            # provide some space above task display
-            print("")
 
         except BaseException as ex:
             await project_cleanup_shutdown(True)
@@ -260,12 +258,24 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         cmd_str = " ".join(shlex.quote(arg) for arg in cmd)
         final_cmd = f"{prefix}{cd_cmd} && {cmd_str}{stdin_redir}{cleanup}"
 
-        print(final_cmd)
+        logger.info(f"Executing command: {final_cmd}")
 
         exec_result = await self.sandbox.aexec(
             final_cmd,
             timeout=timeout,
         )
+
+        # Log the result
+        if exec_result.exit_code == 0:
+            logger.info(f"Command succeeded (exit_code={exec_result.exit_code})")
+            if exec_result.stdout:
+                logger.debug(f"stdout: {exec_result.stdout[:500]}")  # Truncate long output
+        else:
+            logger.error(f"Command failed (exit_code={exec_result.exit_code})")
+            if exec_result.stderr:
+                logger.error(f"stderr: {exec_result.stderr}")
+            if exec_result.stdout:
+                logger.debug(f"stdout: {exec_result.stdout[:500]}")
 
         parsed_result = ExecResult(
             stdout=exec_result.stdout,
