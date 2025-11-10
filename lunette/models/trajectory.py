@@ -93,6 +93,9 @@ class Trajectory(BaseModel):
     solution: str | None = None
     """Optional solution or patch produced by the agent."""
 
+    raw_inspect_sample: dict[str, Any] | None = None
+    """Raw Inspect sample payload."""
+
     @computed_field
     @property
     def score(self) -> float | None:
@@ -161,10 +164,14 @@ class Trajectory(BaseModel):
         # TODO: make this more general; currently only supports the "patch" key (used in SWE-bench)
         solution: str | None = sample.metadata.get("patch", None)
 
+        # include raw Inspect sample payload (EvalSample is a Pydantic model)
+        raw_inspect_sample: dict[str, Any] | None = sample.model_dump(mode="json")
+
         return cls(
             sample=sample.id,
             messages=messages,
             scores=scores,
             metadata=sample.metadata,
             solution=solution,
+            raw_inspect_sample=raw_inspect_sample,
         )
