@@ -122,11 +122,17 @@ class Sandbox:
 
         # Log the result
         if exec_result.success:
-            logger.debug(f"[{self.container_id}] Command succeeded (exit_code={exec_result.exit_code})")
+            logger.debug(
+                f"[{self.container_id}] Command succeeded (exit_code={exec_result.exit_code})"
+            )
         else:
-            logger.warning(f"[{self.container_id}] Command failed (exit_code={exec_result.exit_code})")
+            logger.warning(
+                f"[{self.container_id}] Command failed (exit_code={exec_result.exit_code})"
+            )
             if exec_result.stderr:
-                logger.warning(f"[{self.container_id}] stderr: {exec_result.stderr[:500]}")
+                logger.warning(
+                    f"[{self.container_id}] stderr: {exec_result.stderr[:500]}"
+                )
 
         return exec_result
 
@@ -151,7 +157,9 @@ class Sandbox:
                 f"Sandbox {self.container_id} has been destroyed"
             )
 
-        logger.debug(f"[{self.container_id}] Uploading file: {local_path} -> {remote_path}")
+        logger.debug(
+            f"[{self.container_id}] Uploading file: {local_path} -> {remote_path}"
+        )
 
         # Read local file as bytes
         try:
@@ -176,7 +184,9 @@ class Sandbox:
         )
 
         response.raise_for_status()
-        logger.info(f"[{self.container_id}] Successfully uploaded file to {remote_path}")
+        logger.info(
+            f"[{self.container_id}] Successfully uploaded file to {remote_path}"
+        )
 
     async def adownload(
         self,
@@ -199,7 +209,9 @@ class Sandbox:
                 f"Sandbox {self.container_id} has been destroyed"
             )
 
-        logger.debug(f"[{self.container_id}] Downloading file: {remote_path} -> {local_path}")
+        logger.debug(
+            f"[{self.container_id}] Downloading file: {remote_path} -> {local_path}"
+        )
 
         # GET from read endpoint
         try:
@@ -226,7 +238,9 @@ class Sandbox:
         with open(local_path, "wb") as f:
             f.write(content_bytes)
 
-        logger.info(f"[{self.container_id}] Successfully downloaded file to {local_path}")
+        logger.info(
+            f"[{self.container_id}] Successfully downloaded file to {local_path}"
+        )
 
     async def destroy(self) -> None:
         """Destroy the sandbox and clean up resources.

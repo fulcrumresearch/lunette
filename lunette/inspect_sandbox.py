@@ -229,16 +229,14 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
     ) -> ExecResult[str]:
         # ignoring a bunch of shit
 
-
         from inspect_ai.solver._task_state import sample_state
 
-        if not hasattr(self, '_metadata_set'):  
-            state = sample_state()  
-            if state.metadata is None:  
-                state.metadata = {}  
-            state.metadata["lunette_sandbox_id"] = self.sandbox.container_id  
-            self._metadata_set = True  
-
+        if not hasattr(self, "_metadata_set"):
+            state = sample_state()
+            if state.metadata is None:
+                state.metadata = {}
+            state.metadata["lunette_sandbox_id"] = self.sandbox.container_id
+            self._metadata_set = True
 
         stdin_redir = ""
         cleanup = ""
@@ -269,7 +267,9 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         if exec_result.exit_code == 0:
             logger.info(f"Command succeeded (exit_code={exec_result.exit_code})")
             if exec_result.stdout:
-                logger.debug(f"stdout: {exec_result.stdout[:500]}")  # Truncate long output
+                logger.debug(
+                    f"stdout: {exec_result.stdout[:500]}"
+                )  # Truncate long output
         else:
             logger.error(f"Command failed (exit_code={exec_result.exit_code})")
             if exec_result.stderr:
@@ -291,9 +291,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         self, file: str, contents: str | bytes, *, text: bool = True
     ) -> None:
         # Create temporary local file
-        with tempfile.NamedTemporaryFile(
-            mode="wb", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tmp:
             if isinstance(contents, str):
                 tmp.write(contents.encode("utf-8"))
             else:

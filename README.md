@@ -4,7 +4,7 @@ Lunette is a platform for understanding agents and evals through investigator ag
 
 Lunette is currently in beta, and quickly getting many improvements. Feel free to suggest things!
 
-![lunette flow](lunette-flow.png)
+![lunette flow](lunette_flow.png)
 
 ## Installation
 
@@ -30,7 +30,7 @@ Create a configuration file at `~/.lunette/config.json`:
 
 ```json
 {
-  "api_key": "your-api-key-here",
+  "api_key": "your-api-key-here"
 }
 ```
 
@@ -45,7 +45,14 @@ inspect eval your_task.py --sandbox lunette
 That's it! Your trajectories will automatically be logged to the Fulcrum platform, where you can:
 - Browse and visualize agent trajectories
 - Analyze performance across multiple runs
+
 - Launch automated investigations to identify patterns and issues
+
+You can also run almost all existing inspect sandboxes on lunette out of the box, including swebench!
+
+```
+uv run inspect eval inspect_evals/swe_bench_verified_mini --model openai/gpt-5-nano --limit 1 --sandbox lunette -T sandbox_config_template_file=examples/swebench.yaml -T sandbox_type=lunette -T build_docker_images=False
+```
 
 ### Programmatic API
 
@@ -93,24 +100,12 @@ trajectory = Trajectory.from_inspect(run_id="my-run", sample=eval_sample)
 
 Users provide Lunette with investigation specs for agents or evals they want to understand. Lunette then launches investigator agents that operate in parallel. For each trajectory, an investigator agent reads the agent trace, modifies and runs commands in the eval environment to test hypotheses, and writes findings. Validator agents then critique these findings and filter for high-quality results. At the end, users can explore investigation results in the Fulcrum frontend and chat with an agent to learn more.
 
-To launch an investigation, you can use the web UI or define an investigation plan in YAML:
+To launch an investigation, you can use the web UI or define an investigation plan in YAML. See [examples/task_underspecification.yaml](examples/task_underspecification.yaml) for a complete example that analyzes failed trajectories for task underspecification issues.
 
-```yaml
-name: "My Investigation"
-type: "investigation"
-agents:
-  - name: "default-investigator"
-    prompt: "Look for patterns in tool usage and identify potential failures"
-trajectory_filters:
-  filters:
-    task: "my-task-name"
-    score: 0.0
-```
-
-Save this as `investigation-plan.yaml`, then run:
+To run the example:
 
 ```bash
-lunette investigate investigation-plan.yaml
+lunette investigate examples/task_underspecification.yaml
 ```
 
 You can optionally pass `--limit N` to investigate only the first N matching trajectories.
