@@ -59,9 +59,7 @@ class LunetteLoggerHook(Hooks):
         self.model = data.spec.model
         self.trajectories = []
 
-        logger.info(
-            f"Starting task '{self.task}' with model '{self.model}'"
-        )
+        logger.info(f"Starting task '{self.task}' with model '{self.model}'")
 
     async def on_sample_end(self, data: SampleEnd) -> None:
         """Called when a sample completes. Buffers the trajectory.
