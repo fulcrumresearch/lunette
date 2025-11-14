@@ -93,6 +93,9 @@ class Trajectory(BaseModel):
     solution: str | None = None
     """Optional solution or patch produced by the agent."""
 
+    sandbox_id: str | None = None
+    """Optional sandbox container ID if this trajectory ran in a sandbox."""
+
     @computed_field
     @property
     def score(self) -> float | None:
@@ -161,10 +164,14 @@ class Trajectory(BaseModel):
         # TODO: make this more general; currently only supports the "patch" key (used in SWE-bench)
         solution: str | None = sample.metadata.get("patch", None)
 
+        # extract sandbox_id from metadata if available
+        sandbox_id: str | None = sample.metadata.get("lunette_sandbox_id", None)
+
         return cls(
             sample=sample.id,
             messages=messages,
             scores=scores,
             metadata=sample.metadata,
             solution=solution,
+            sandbox_id=sandbox_id,
         )

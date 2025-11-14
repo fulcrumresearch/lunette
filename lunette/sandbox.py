@@ -58,7 +58,7 @@ class Sandbox:
         self,
         client: "LunetteClient",
         tag: str,
-        container_id: str,
+        sandbox_id: str,
         service: ComposeService,
     ):
         """Initialize sandbox instance.
@@ -66,12 +66,12 @@ class Sandbox:
         Args:
             client: LunetteClient instance for API communication
             tag: Docker image tag for this sandbox
-            container_id: Docker container ID for this sandbox
+            sandbox_id: Stable sandbox ID (persists across restores)
             service: Docker Compose service specification
         """
         self.client = client
         self.tag = tag
-        self.container_id = container_id
+        self.sandbox_id = sandbox_id
         self.service = service
         self._destroyed = False
 
@@ -100,14 +100,14 @@ class Sandbox:
         """
         if self._destroyed:
             raise SandboxDestroyedError(
-                f"Sandbox {self.container_id} has been destroyed"
+                f"Sandbox {self.sandbox_id} has been destroyed"
             )
 
-        logger.debug(f"[{self.container_id}] Executing command: {cmd}")
+        logger.debug(f"[{self.sandbox_id}] Executing command: {cmd}")
 
-        # Make HTTP POST to /sandboxes/{container_id}/exec
+        # Make HTTP POST to /sandboxes/{sandbox_id}/exec
         response = await self.client._client.post(
-            f"/sandboxes/{self.container_id}/exec", json={"command": cmd}
+            f"/sandboxes/{self.sandbox_id}/exec", json={"command": cmd}
         )
 
         response.raise_for_status()
@@ -123,15 +123,15 @@ class Sandbox:
         # Log the result
         if exec_result.success:
             logger.debug(
-                f"[{self.container_id}] Command succeeded (exit_code={exec_result.exit_code})"
+                f"[{self.sandbox_id}] Command succeeded (exit_code={exec_result.exit_code})"
             )
         else:
             logger.warning(
-                f"[{self.container_id}] Command failed (exit_code={exec_result.exit_code})"
+                f"[{self.sandbox_id}] Command failed (exit_code={exec_result.exit_code})"
             )
             if exec_result.stderr:
                 logger.warning(
-                    f"[{self.container_id}] stderr: {exec_result.stderr[:500]}"
+                    f"[{self.sandbox_id}] stderr: {exec_result.stderr[:500]}"
                 )
 
         return exec_result
@@ -154,11 +154,11 @@ class Sandbox:
         """
         if self._destroyed:
             raise SandboxDestroyedError(
-                f"Sandbox {self.container_id} has been destroyed"
+                f"Sandbox {self.sandbox_id} has been destroyed"
             )
 
         logger.debug(
-            f"[{self.container_id}] Uploading file: {local_path} -> {remote_path}"
+            f"[{self.sandbox_id}] Uploading file: {local_path} -> {remote_path}"
         )
 
         # Read local file as bytes
@@ -179,13 +179,13 @@ class Sandbox:
 
         # POST to write endpoint
         response = await self.client._client.post(
-            f"/sandboxes/{self.container_id}/write",
+            f"/sandboxes/{self.sandbox_id}/write",
             json={"path": remote_path, "content": content_str, "encoding": encoding},
         )
 
         response.raise_for_status()
         logger.info(
-            f"[{self.container_id}] Successfully uploaded file to {remote_path}"
+            f"[{self.sandbox_id}] Successfully uploaded file to {remote_path}"
         )
 
     async def adownload(
@@ -206,17 +206,17 @@ class Sandbox:
         """
         if self._destroyed:
             raise SandboxDestroyedError(
-                f"Sandbox {self.container_id} has been destroyed"
+                f"Sandbox {self.sandbox_id} has been destroyed"
             )
 
         logger.debug(
-            f"[{self.container_id}] Downloading file: {remote_path} -> {local_path}"
+            f"[{self.sandbox_id}] Downloading file: {remote_path} -> {local_path}"
         )
 
         # GET from read endpoint
         try:
             response = await self.client._client.get(
-                f"/sandboxes/{self.container_id}/read", params={"path": remote_path}
+                f"/sandboxes/{self.sandbox_id}/read", params={"path": remote_path}
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
@@ -239,7 +239,7 @@ class Sandbox:
             f.write(content_bytes)
 
         logger.info(
-            f"[{self.container_id}] Successfully downloaded file to {local_path}"
+            f"[{self.sandbox_id}] Successfully downloaded file to {local_path}"
         )
 
     async def destroy(self) -> None:
@@ -256,4 +256,4 @@ class Sandbox:
 
     def __repr__(self) -> str:
         status = "destroyed" if self._destroyed else "active"
-        return f"Sandbox(container_id={self.container_id}, status={status})"
+        return f"Sandbox(sandbox_id={self.sandbox_id}, status={status})"

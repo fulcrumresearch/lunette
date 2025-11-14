@@ -100,18 +100,20 @@ class LunetteLoggerHook(Hooks):
             logger.error("Task not set - cannot save run")
             return
 
-        try:
-            run = Run(
-                task=self.task,
-                model=self.model,
-                trajectories=self.trajectories,
-            )
+        run = Run(
+            task=self.task,
+            model=self.model,
+            trajectories=self.trajectories,
+        )
 
-            result = await self.client.save_run(run)
+        result = await self.client.save_run(run)
 
-            logger.info(
-                f"Saved run {result['run_id']} with {len(result['trajectory_ids'])} trajectories"
-            )
+        logger.info(
+            f"Saved run {result['run_id']} with {len(result['trajectory_ids'])} trajectories"
+        )
 
-        except Exception as e:
-            logger.error(f"Failed to save run: {e}")
+        # Collect sandbox IDs and stop them
+        sandbox_ids = [t.sandbox_id for t in self.trajectories if t.sandbox_id]
+        if sandbox_ids:
+            await self.client.stop_sandboxes(sandbox_ids, save_state=True)
+            logger.info(f"Initiated stop for {len(sandbox_ids)} sandboxes")
