@@ -220,11 +220,11 @@ class LunetteClient:
         sandbox = Sandbox(
             client=self,
             tag=result["tag"],
-            container_id=result["sandbox_id"],
+            sandbox_id=result["sandbox_id"],
             service=service,
         )
 
-        logger.info(f"Successfully created sandbox: {sandbox.container_id}")
+        logger.info(f"Successfully created sandbox: {sandbox.sandbox_id}")
 
         return sandbox
 
@@ -274,6 +274,34 @@ class LunetteClient:
             "/investigations/run",
             json={"plan": plan, "limit": limit},
             timeout=None,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def stop_sandboxes(
+        self, sandbox_ids: List[str], save_state: bool = False
+    ) -> dict:
+        """Stop one or more sandbox containers and optionally save their state.
+
+        This should be called after an evaluation run completes to clean up sandboxes.
+        With save_state=True, the sandbox workdir is saved to S3 for later restoration
+        during investigations.
+
+        Args:
+            sandbox_ids: List of sandbox container IDs to stop
+            save_state: If True, save sandbox state to S3 before stopping (default: False)
+
+        Returns:
+            dict with:
+                - stopped: list of successfully stopped sandboxes
+                - failed: list of failed sandboxes with error messages
+
+        Raises:
+            httpx.HTTPError: For HTTP-related errors
+        """
+        response = await self._client.post(
+            "/sandboxes/stop",
+            json={"sandbox_ids": sandbox_ids, "save_state": save_state},
         )
         response.raise_for_status()
         return response.json()

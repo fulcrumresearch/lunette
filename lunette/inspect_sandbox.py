@@ -8,6 +8,7 @@ from typing_extensions import override
 
 from inspect_ai.util._subprocess import ExecResult, subprocess
 
+from inspect_ai.log._samples import active_samples
 from inspect_ai.util._sandbox.environment import (
     SandboxEnvironment,
     SandboxEnvironmentConfigType,
@@ -154,11 +155,11 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
             client = LunetteClient()
             sandbox = await client.create_sandbox(service)
 
-            # Add sandbox container_id to sample metadata for trajectory tracking
+            # Add sandbox_id to sample metadata for trajectory tracking
             if sample is not None:
                 if sample.sample.metadata is None:
                     sample.sample.metadata = {}
-                sample.sample.metadata["lunette_sandbox_id"] = sandbox.container_id
+                sample.sample.metadata["lunette_sandbox_id"] = sandbox.sandbox_id
 
             return {
                 name: LunetteSandboxEnvironment(
@@ -235,7 +236,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
             state = sample_state()
             if state.metadata is None:
                 state.metadata = {}
-            state.metadata["lunette_sandbox_id"] = self.sandbox.container_id
+            state.metadata["lunette_sandbox_id"] = self.sandbox.sandbox_id
             self._metadata_set = True
 
         stdin_redir = ""
