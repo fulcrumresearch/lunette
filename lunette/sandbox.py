@@ -57,7 +57,6 @@ class Sandbox:
     def __init__(
         self,
         client: "LunetteClient",
-        tag: str,
         sandbox_id: str,
         service: ComposeService,
     ):
@@ -65,12 +64,10 @@ class Sandbox:
 
         Args:
             client: LunetteClient instance for API communication
-            tag: Docker image tag for this sandbox
             sandbox_id: Stable sandbox ID (persists across restores)
             service: Docker Compose service specification
         """
         self.client = client
-        self.tag = tag
         self.sandbox_id = sandbox_id
         self.service = service
         self._destroyed = False
