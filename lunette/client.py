@@ -16,6 +16,15 @@ from lunette.logger import get_lunette_logger
 logger = get_lunette_logger(__name__)
 
 
+def _read_dockerfile(build_dir: Path) -> str:
+    """Read Dockerfile from build directory."""
+    for name in ("Dockerfile", "dockerfile"):
+        p = build_dir / name
+        if p.exists():
+            return p.read_text()
+    raise FileNotFoundError(f"No Dockerfile found in: {build_dir}")
+
+
 def _read_dockerignore(build_dir: Path) -> List[str]:
     p = build_dir / ".dockerignore"
     if not p.exists():
@@ -162,6 +171,7 @@ class LunetteClient:
         """
         image_name: Optional[str] = None
         tar_file = None
+        dockerfile_content: Optional[str] = None
 
         if "image" in service and service["image"]:
             image_name = service["image"]
@@ -183,6 +193,9 @@ class LunetteClient:
 
             logger.info(f"Creating sandbox from build context: {build_dir}")
 
+            # Read Dockerfile for Morph backend support
+            dockerfile_content = _read_dockerfile(build_dir)
+
             # Create tar of build context
             with tempfile.NamedTemporaryFile(suffix=".tar", delete=False) as tmp:
                 tar_path = Path(tmp.name)
@@ -202,6 +215,9 @@ class LunetteClient:
         if tar_file:
             files["build_context"] = tar_file
 
+        if dockerfile_content:
+            data["dockerfile"] = dockerfile_content
+
         response = await self._client.post(
             "/sandboxes",
             data=data if data else None,
@@ -219,7 +235,6 @@ class LunetteClient:
 
         sandbox = Sandbox(
             client=self,
-            tag=result["tag"],
             sandbox_id=result["sandbox_id"],
             service=service,
         )
