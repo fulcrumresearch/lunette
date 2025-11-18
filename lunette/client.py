@@ -1,6 +1,7 @@
 """Lunette SDK Client for managing sandboxes."""
 
 import json
+import os
 import tarfile
 import tempfile
 from pathlib import Path
@@ -112,7 +113,13 @@ class LunetteClient:
         """
         # Load from config file if needed
         config_data = {}
-        config_path = Path.home() / ".lunette" / "config.json"
+
+        # Check for LUNETTE_HOME_DIR environment variable
+        lunette_home = os.environ.get("LUNETTE_HOME_DIR")
+        if lunette_home:
+            config_path = Path(lunette_home) / "config.json"
+        else:
+            config_path = Path.home() / ".lunette" / "config.json"
 
         if not config_path.exists():
             config_data = {}
