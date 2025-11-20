@@ -133,48 +133,32 @@ class Trajectory(BaseModel):
         # convert InspectAI `ChatMessage`s to our `Message`s
         messages: list[Message] = []
         tool_calls: dict[str, ToolCall] = {}  # tool call ID -> `ToolCall`
-        position = 0
 
-        for inspect_message in sample.messages:
-            message_to_append: Message | None = None
-
-            match inspect_message:
-                case ChatMessageSystem():
-                    message_to_append = SystemMessage.from_inspect(
-                        position, inspect_message
-                    )
-
-                case ChatMessageUser():
-                    message_to_append = UserMessage.from_inspect(
-                        position, inspect_message
-                    )
-
+        for position, message in enumerate(sample.messages):
+            match message:
                 case ChatMessageAssistant():
-                    # build assistant message to compute visible text via `.text`
-                    assistant_message = AssistantMessage.from_inspect(
-                        position, inspect_message
-                    )
-
-                    # record tool calls for later tool results
+                    assistant_message = AssistantMessage.from_inspect(position, message)
+                    messages.append(assistant_message)
                     if assistant_message.tool_calls is not None:
                         for tool_call in assistant_message.tool_calls:
                             tool_calls[tool_call.id] = tool_call
 
-                    # only include assistant message if it has user-visible content
-                    if assistant_message.text.strip():
-                        message_to_append = assistant_message
-
                 case ChatMessageTool():
-                    tool_call_id = inspect_message.tool_call_id
+                    tool_call_id = message.tool_call_id
                     if tool_call_id not in tool_calls:
                         raise ValueError(f"Tool call ID {tool_call_id} not found")
-                    message_to_append = ToolMessage.from_inspect(
-                        position, inspect_message, tool_calls[tool_call_id]
+                    tool_message = ToolMessage.from_inspect(
+                        position, message, tool_calls[tool_call_id]
                     )
+                    messages.append(tool_message)
 
-            if message_to_append is not None:
-                messages.append(message_to_append)
-                position += 1
+                case ChatMessageSystem():
+                    system_message = SystemMessage.from_inspect(position, message)
+                    messages.append(system_message)
+
+                case ChatMessageUser():
+                    user_message = UserMessage.from_inspect(position, message)
+                    messages.append(user_message)
 
         # extract solution from metadata if available
         # TODO: make this more general; currently only supports the "patch" key (used in SWE-bench)
