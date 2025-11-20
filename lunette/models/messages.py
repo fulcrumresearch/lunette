@@ -12,6 +12,7 @@ from inspect_ai.model import (
     Content as InspectContent,
     ContentReasoning as InspectReasoning,
     ContentText as InspectText,
+    ContentImage as InspectImage,
 )
 from inspect_ai.tool import ToolCall as InspectToolCall
 
@@ -29,6 +30,19 @@ class Text(BaseModel):
     def from_inspect(cls, content: InspectText) -> Text:
         """Convert an Inspect AI `ContentText` to our `Text` model."""
         return cls(text=content.text)
+
+
+class Image(BaseModel):
+    """Image content."""
+
+    type: Literal["image"] = "image"
+    image: str
+    detail: Literal["auto", "low", "high"] = "auto"
+
+    @classmethod
+    def from_inspect(cls, content: InspectImage) -> Image:
+        """Convert an Inspect AI `ContentImage` to our `Image` model."""
+        return cls(image=content.image, detail=content.detail)
 
 
 class Reasoning(BaseModel):
@@ -56,7 +70,7 @@ class Reasoning(BaseModel):
         )
 
 
-Content = Text | Reasoning
+Content = Text | Reasoning | Image
 
 
 def _content_from_inspect(content: str | list[InspectContent]) -> str | list[Content]:
@@ -79,6 +93,8 @@ def _content_from_inspect(content: str | list[InspectContent]) -> str | list[Con
                 result.append(Text.from_inspect(item))
             case InspectReasoning():
                 result.append(Reasoning.from_inspect(item))
+            case InspectImage():
+                result.append(Image.from_inspect(item))
             # we ignore other content types for now
 
     return result
