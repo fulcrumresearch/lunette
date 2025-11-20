@@ -3,9 +3,9 @@ type: investigation
 trajectory_filters:
   filters:
     score: [lt, 0.5]
-agents:
-  - name: underspecification_analyzer
-    prompt: |
+agent:
+  name: underspecification_analyzer
+  prompt: |
       Analyze failed trajectories for task underspecification issues.
 
       Look for cases where:
