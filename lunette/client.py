@@ -10,9 +10,10 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
+from lunette.analysis.models import AnalysisPlan
+from lunette.logger import get_lunette_logger
 from lunette.models.run import Run
 from lunette.sandbox import Sandbox
-from lunette.logger import get_lunette_logger
 
 logger = get_lunette_logger(__name__)
 
@@ -292,9 +293,12 @@ class LunetteClient:
         Raises:
             httpx.HTTPError: For HTTP-related errors
         """
+        # Parse YAML to AnalysisPlan object
+        plan_obj = AnalysisPlan.from_yaml(plan)
+
         response = await self._client.post(
             "/investigations/run",
-            json={"plan": plan, "limit": limit},
+            json={"plan": plan_obj.model_dump(mode="python"), "limit": limit},
             timeout=None,
         )
         response.raise_for_status()
