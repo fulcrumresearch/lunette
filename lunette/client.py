@@ -13,6 +13,7 @@ from inspect_ai.util._sandbox.docker.service import ComposeService
 from lunette.analysis.models import AnalysisPlan
 from lunette.logger import get_lunette_logger
 from lunette.models.run import Run
+from lunette.models.trajectory import Trajectory
 from lunette.sandbox import Sandbox
 
 logger = get_lunette_logger(__name__)
@@ -279,6 +280,38 @@ class LunetteClient:
         response = await self._client.post("/runs/save", json=run_dict)
         response.raise_for_status()
         return response.json()
+
+    async def get_run(self, run_id: str) -> Run:
+        """Fetch a run by its ID.
+
+        Args:
+            run_id: The ID of the run to fetch
+
+        Returns:
+            Run object
+
+        Raises:
+            httpx.HTTPError: For HTTP-related errors
+        """
+        response = await self._client.get(f"/runs/{run_id}")
+        response.raise_for_status()
+        return Run.model_validate(response.json())
+
+    async def get_trajectory(self, trajectory_id: str) -> Trajectory:
+        """Fetch a trajectory by its ID.
+
+        Args:
+            trajectory_id: The ID of the trajectory to fetch
+
+        Returns:
+            Trajectory object
+
+        Raises:
+            httpx.HTTPError: For HTTP-related errors
+        """
+        response = await self._client.get(f"/trajectories/{trajectory_id}")
+        response.raise_for_status()
+        return Trajectory.model_validate(response.json())
 
     async def launch_investigation(self, plan: str, limit: int = 10) -> dict:
         """Launch an investigation using a plan YAML.
