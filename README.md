@@ -86,6 +86,16 @@ See the full data model in [lunette/models/](https://github.com/fulcrum-research
 
 We will document this more and improve the non-inspect SDK soon.
 
+### Uploading Inspect Logs
+
+If you already have an Inspect `.eval` (or JSON) log from `inspect eval --log`, you can upload it directly with the Lunette CLI:
+
+```
+lunette upload logs/2025-11-04T11-10-16-05-00_swe-bench.eval --run-id swe-mini-nov04
+```
+
+The command extracts trajectories from the log, creates a run with the task/model metadata, and saves everything to Fulcrum. Use `--task` or `--model` if you need to override what was stored in the log, and `--run-id` to append to an existing run.
+
 ### Converting from Inspect AI
 
 Lunette provides utilities to convert Inspect AI `EvalSample` objects to the standard `Trajectory` format:
