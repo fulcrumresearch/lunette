@@ -15,7 +15,6 @@ from lunette.models.trajectory import Trajectory
 
 async def upload_command(
     log_file: Path,
-    run_id: Optional[str] = None,
     task_override: Optional[str] = None,
     model_override: Optional[str] = None,
 ) -> None:
@@ -37,8 +36,6 @@ async def upload_command(
 
     task = task_override or getattr(log.eval, "task", None)
     model = model_override or getattr(log.eval, "model", None)
-    default_run_id = getattr(log.eval, "run_id", None)
-    resolved_run_id = run_id or default_run_id
 
     if not task:
         raise ValueError(
@@ -51,18 +48,12 @@ async def upload_command(
 
     print(f"Found {len(trajectories)} trajectories for task='{task}' model='{model}'")
 
-    run = Run(
-        id=resolved_run_id,
-        task=task,
-        model=model,
-        trajectories=trajectories,
-    )
+    run = Run(task=task, model=model, trajectories=trajectories)
 
     async with LunetteClient() as client:
         print("Uploading run to Lunette...")
         result = await client.save_run(run)
-        run_id = result.get("run_id", resolved_run_id)
-        print(f"Upload complete. Run ID: {run_id}")
+        print(f"Upload complete. Run ID: {result.get('run_id')}")
 
 
 async def investigate_command(plan_file: Path, limit: int):
@@ -94,11 +85,6 @@ def main():
         help="Path to Inspect log (.eval or .json) created by `inspect eval --log`",
     )
     upload_parser.add_argument(
-        "--run-id",
-        dest="run_id",
-        help="Optional run ID to reuse/override when saving the trajectories",
-    )
-    upload_parser.add_argument(
         "--task",
         dest="task",
         help="Override task name stored in the log (defaults to Inspect metadata)",
@@ -114,9 +100,7 @@ def main():
     if args.command == "investigate":
         asyncio.run(investigate_command(args.plan_file, args.limit))
     elif args.command == "upload":
-        asyncio.run(
-            upload_command(args.log_file, args.run_id, args.task, args.model)
-        )
+        asyncio.run(upload_command(args.log_file, args.task, args.model))
     else:
         parser.print_help()
 
