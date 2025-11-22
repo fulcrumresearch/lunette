@@ -95,6 +95,7 @@ lunette upload logs/2025-11-04T11-10-16-05-00_swe-bench.eval
 ```
 
 The command extracts trajectories from the log, creates a run with the task/model metadata, and saves everything to Fulcrum. Use `--task` or `--model` if you need to override what was stored in the log metadata.
+Attachments referenced via `attachment://` URIs (images, files, etc.) are automatically resolved and embedded before upload.
 
 ### Converting from Inspect AI
 

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from inspect_ai.log import read_eval_log
+from inspect_ai.log import read_eval_log, resolve_sample_attachments
 
 from lunette.client import LunetteClient
 from lunette.models.run import Run
@@ -30,9 +30,10 @@ async def upload_command(
     if not samples:
         raise ValueError(f"No samples found in {log_path}")
 
-    trajectories: list[Trajectory] = [
-        Trajectory.from_inspect(sample) for sample in samples
-    ]
+    trajectories: list[Trajectory] = []
+    for sample in samples:
+        hydrated = resolve_sample_attachments(sample, resolve_attachments=True)
+        trajectories.append(Trajectory.from_inspect(hydrated))
 
     task = task_override or getattr(log.eval, "task", None)
     model = model_override or getattr(log.eval, "model", None)
