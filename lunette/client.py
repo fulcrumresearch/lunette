@@ -281,7 +281,6 @@ class LunetteClient:
         response.raise_for_status()
         return response.json()
 
-<<<<<<< HEAD
     async def get_run(self, run_id: str) -> Run:
         """Fetch a run by its ID.
 
