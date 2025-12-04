@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 
 
@@ -24,6 +25,24 @@ from lunette.models.messages import (
 )
 
 
+def _sanitize_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Convert non-JSON-serializable values (like Enums) to serializable forms."""
+    sanitized = {}
+    for key, value in metadata.items():
+        if isinstance(value, Enum):
+            sanitized[key] = value.value
+        elif isinstance(value, dict):
+            sanitized[key] = _sanitize_metadata(value)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                item.value if isinstance(item, Enum) else item
+                for item in value
+            ]
+        else:
+            sanitized[key] = value
+    return sanitized
+
+
 class ScalarScore(BaseModel):
     """A scalar score for a trajectory."""
 
@@ -43,10 +62,22 @@ class ScalarScore(BaseModel):
     def from_inspect(cls, score: Score) -> ScalarScore:
         """Convert an Inspect AI `Score` to a `ScalarScore`."""
 
-        try:
-            value: str | int | float | bool = score._as_scalar()
-        except ValueError:
-            raise ValueError("Score is not a scalar")
+
+        # Handle dict values (e.g., {'main_task_success': 'I'})
+        value = score.value
+        if isinstance(value, dict):
+            # Try to extract a single scalar value from the dict
+            if len(value) == 1:
+                value = list(value.values())[0]
+            else:
+                raise ValueError(f"Score value is a dict with multiple keys: {value}")
+        else:
+
+            try:
+                value: str | int | float | bool = score._as_scalar()
+            except ValueError:
+                raise ValueError("Score is not a scalar")
+
 
         match value:
             case "C":
@@ -121,14 +152,28 @@ class Trajectory(BaseModel):
             raise ValueError(f"Sample {sample.id} has an error: {sample.error.message}")
 
         # start by extracting scores, so we fail fast if they aren't scalars
-        scores: dict[str, ScalarScore] | None = (
-            {
-                name: ScalarScore.from_inspect(score)
-                for name, score in sample.scores.items()
-            }
-            if sample.scores is not None
-            else None
-        )
+        scores: dict[str, ScalarScore] | None = None
+        if sample.scores is not None:
+            scores = {}
+            for name, score in sample.scores.items():
+                # Check if score.value is a dict with multiple keys
+                if isinstance(score.value, dict) and len(score.value) > 1:
+                    # Split multi-key dict into separate scalar scores
+                    for subkey, subvalue in score.value.items():
+                        # Create a temporary Score object for each sub-score
+                        from inspect_ai.scorer import Score as InspectScore
+                        subscore = InspectScore(
+                            value=subvalue,
+                            answer=score.answer,
+                            explanation=score.explanation,
+                            metadata=score.metadata,
+                        )
+                        # Use a composite name like "scorer_name/subkey"
+                        composite_name = f"{name}/{subkey}" if name else subkey
+                        scores[composite_name] = ScalarScore.from_inspect(subscore)
+                else:
+                    # Single value score - process normally
+                    scores[name] = ScalarScore.from_inspect(score)
 
         # convert InspectAI `ChatMessage`s to our `Message`s
         messages: list[Message] = []
@@ -171,7 +216,7 @@ class Trajectory(BaseModel):
             sample=sample.id,
             messages=messages,
             scores=scores,
-            metadata=sample.metadata,
+            metadata=_sanitize_metadata(sample.metadata),
             solution=solution,
             sandbox_id=sandbox_id,
         )

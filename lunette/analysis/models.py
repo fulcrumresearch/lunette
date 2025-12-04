@@ -60,6 +60,10 @@ class AnalysisPlan(BaseModel):
     trajectory_filters: TrajectoryFilters = Field(
         ..., description="Criteria for selecting trajectories to investigate"
     )
+    disable_sandbox: bool = Field(
+        False,
+        description="If true, disable sandbox access even if trajectories have sandbox_id",
+    )
 
     def to_yaml(self) -> str:
         """Serialize plan to YAML string.
