@@ -297,20 +297,26 @@ def test_trajectory_id_var_set_reset():
 
 
 @pytest.fixture(autouse=True)
-def reset_active_tracer():
-    """Reset the global _active_tracer before and after each test."""
+def reset_tracer_state():
+    """Reset global tracer state before and after each test."""
     import lunette.tracing.tracer as tracer_module
 
     tracer_module._active_tracer = None
+    tracer_module._tracer_provider = None
     yield
     tracer_module._active_tracer = None
+    tracer_module._tracer_provider = None
 
 
 @pytest.mark.asyncio
 async def test_tracer_basic_flow():
     """Test full tracer flow with mocked OTel and client."""
     # patch OpenAI instrumentation to avoid actually instrumenting
-    with patch("lunette.tracing.tracer.OpenAIInstrumentor"):
+    mock_instrumentor = MagicMock()
+    mock_instrumentor.is_instrumented_by_opentelemetry = False
+    with patch(
+        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
+    ):
         from lunette.tracing import LunetteTracer
 
         tracer = LunetteTracer(task="test-task", model="gpt-4")
@@ -339,7 +345,11 @@ async def test_tracer_basic_flow():
 @pytest.mark.asyncio
 async def test_tracer_nested_trajectories_error():
     """Nested trajectories should raise an error."""
-    with patch("lunette.tracing.tracer.OpenAIInstrumentor"):
+    mock_instrumentor = MagicMock()
+    mock_instrumentor.is_instrumented_by_opentelemetry = False
+    with patch(
+        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
+    ):
         from lunette.tracing import LunetteTracer
 
         tracer = LunetteTracer(task="test", model="gpt-4")
@@ -353,7 +363,11 @@ async def test_tracer_nested_trajectories_error():
 @pytest.mark.asyncio
 async def test_tracer_multiple_instances_error():
     """Creating a second tracer without closing the first should raise an error."""
-    with patch("lunette.tracing.tracer.OpenAIInstrumentor"):
+    mock_instrumentor = MagicMock()
+    mock_instrumentor.is_instrumented_by_opentelemetry = False
+    with patch(
+        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
+    ):
         from lunette.tracing import LunetteTracer
 
         _ = LunetteTracer(task="test1", model="gpt-4")

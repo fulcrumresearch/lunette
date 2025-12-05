@@ -24,8 +24,9 @@ from lunette.tracing.span_converter import convert_spans_to_messages
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-# module-level guard to prevent multiple concurrent tracers
+# module-level state
 _active_tracer: LunetteTracer | None = None
+_tracer_provider: TracerProvider | None = None
 
 
 class LunetteTracer:
@@ -78,23 +79,33 @@ class LunetteTracer:
 
     def _setup_otel(self) -> None:
         """Configure OpenTelemetry with our SpanCollector."""
-        resource = Resource.create(
-            {
-                "service.name": "lunette-agent",
-                "lunette.task": self.task,
-                "lunette.model": self.model,
-                "lunette.run_id": self.run_id,
-            }
-        )
+        global _tracer_provider
 
-        self._provider = TracerProvider(resource=resource)
+        instrumentor = OpenAIInstrumentor()
+
+        if not instrumentor.is_instrumented_by_opentelemetry:
+            # first-time setup: create provider and instrument OpenAI
+            resource = Resource.create(
+                {
+                    "service.name": "lunette-agent",
+                    "lunette.task": self.task,
+                    "lunette.model": self.model,
+                    "lunette.run_id": self.run_id,
+                }
+            )
+
+            _tracer_provider = TracerProvider(resource=resource)
+            trace.set_tracer_provider(_tracer_provider)
+
+            os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
+            instrumentor.instrument()
+
+        # use the shared provider
+        self._provider = _tracer_provider
+
+        # always add our collector and get a tracer
         self._provider.add_span_processor(self._collector)
-        trace.set_tracer_provider(self._provider)
         self._otel_tracer = trace.get_tracer("lunette")
-
-        # enable content capture for prompts and completions
-        os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
-        OpenAIInstrumentor().instrument()
 
     def trajectory(self, sample: int | str, **metadata: Any) -> TrajectoryContext:
         """Create a context for tracking a single trajectory (sample).
@@ -132,9 +143,9 @@ class LunetteTracer:
         global _active_tracer
         _active_tracer = None
 
-        # shutdown OTel to ensure all spans are processed
+        # flush (but don't shutdown) the provider - it's shared across tracer instances
         if self._provider:
-            self._provider.shutdown()
+            self._provider.force_flush()
 
         if not self._trajectories:
             return {"run_id": self.run_id, "trajectory_ids": []}
