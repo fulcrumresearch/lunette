@@ -21,6 +21,7 @@ from lunette.tracing.context import trajectory_context_id_var
 from lunette.tracing.span_collector import SpanCollector
 from lunette.tracing.span_converter import convert_spans_to_messages
 
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -43,23 +44,17 @@ class LunetteTracer:
         self,
         task: str,
         model: str,
-        api_url: str | None = None,
-        api_key: str | None = None,
     ) -> None:
         """Initialize the Lunette tracing system.
 
         Args:
             task: The name of the task (e.g., 'math-eval')
             model: The name of the model (e.g., 'gpt-4o')
-            api_url: Optional Lunette API URL (defaults to config file)
-            api_key: Optional API key (defaults to config file)
         """
         self.task = task
         self.model = model
         self.run_id = str(uuid.uuid4())
 
-        self._api_url = api_url
-        self._api_key = api_key
         self._trajectories: list[Trajectory] = []
         self._collector = SpanCollector()
         self._provider: TracerProvider | None = None
@@ -134,9 +129,7 @@ class LunetteTracer:
             trajectories=self._trajectories,
         )
 
-        async with LunetteClient(
-            base_url=self._api_url, api_key=self._api_key
-        ) as client:
+        async with LunetteClient() as client:
             return await client.save_run(run)
 
 
