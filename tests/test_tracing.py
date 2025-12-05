@@ -16,7 +16,6 @@ from lunette.tracing.span_converter import (
 from lunette.models.messages import (
     AssistantMessage,
     SystemMessage,
-    ToolMessage,
     UserMessage,
 )
 
@@ -297,6 +296,16 @@ def test_trajectory_id_var_set_reset():
 # --- Integration test with mocked OTel ---
 
 
+@pytest.fixture(autouse=True)
+def reset_active_tracer():
+    """Reset the global _active_tracer before and after each test."""
+    import lunette.tracing.tracer as tracer_module
+
+    tracer_module._active_tracer = None
+    yield
+    tracer_module._active_tracer = None
+
+
 @pytest.mark.asyncio
 async def test_tracer_basic_flow():
     """Test full tracer flow with mocked OTel and client."""
@@ -339,3 +348,23 @@ async def test_tracer_nested_trajectories_error():
             async with tracer.trajectory(sample=1):
                 async with tracer.trajectory(sample=2):
                     pass
+
+
+@pytest.mark.asyncio
+async def test_tracer_multiple_instances_error():
+    """Creating a second tracer without closing the first should raise an error."""
+    with patch("lunette.tracing.tracer.OpenAIInstrumentor"):
+        from lunette.tracing import LunetteTracer
+
+        _ = LunetteTracer(task="test1", model="gpt-4")
+
+        with pytest.raises(RuntimeError, match="Only one LunetteTracer"):
+            LunetteTracer(task="test2", model="gpt-4")
+
+        # after closing, we can create a new one
+        import lunette.tracing.tracer as tracer_module
+
+        tracer_module._active_tracer = None  # simulate close()
+
+        tracer2 = LunetteTracer(task="test2", model="gpt-4")
+        assert tracer2.task == "test2"

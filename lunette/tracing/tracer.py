@@ -24,6 +24,9 @@ from lunette.tracing.span_converter import convert_spans_to_messages
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# module-level guard to prevent multiple concurrent tracers
+_active_tracer: LunetteTracer | None = None
+
 
 class LunetteTracer:
     """Main entry point for tracing OpenAI calls as Lunette Trajectories.
@@ -50,7 +53,18 @@ class LunetteTracer:
         Args:
             task: The name of the task (e.g., 'math-eval')
             model: The name of the model (e.g., 'gpt-4o')
+
+        Raises:
+            RuntimeError: If another LunetteTracer is already active
         """
+        global _active_tracer
+        if _active_tracer is not None:
+            raise RuntimeError(
+                "Only one LunetteTracer can be active at a time. "
+                "Call close() on the existing tracer before creating a new one."
+            )
+        _active_tracer = self
+
         self.task = task
         self.model = model
         self.run_id = str(uuid.uuid4())
@@ -115,6 +129,9 @@ class LunetteTracer:
         Returns:
             Dict with run_id and trajectory_ids from the server response
         """
+        global _active_tracer
+        _active_tracer = None
+
         # shutdown OTel to ensure all spans are processed
         if self._provider:
             self._provider.shutdown()
