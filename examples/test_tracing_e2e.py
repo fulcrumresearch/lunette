@@ -94,7 +94,6 @@ async def main():
     print("RUN PAYLOAD (what would be uploaded)")
     print("=" * 50)
 
-    from lunette.models.run import Run
 
     run = Run(
         id=tracer.run_id,
