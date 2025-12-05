@@ -17,9 +17,10 @@ import json
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-load_dotenv()
-
 from lunette.tracing import LunetteTracer
+
+
+load_dotenv()
 
 
 async def main():
