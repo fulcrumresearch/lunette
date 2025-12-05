@@ -17,7 +17,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from lunette.client import LunetteClient
 from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
-from lunette.tracing.context import trajectory_id_var
+from lunette.tracing.context import trajectory_context_id_var
 from lunette.tracing.span_collector import SpanCollector
 from lunette.tracing.span_converter import convert_spans_to_messages
 
@@ -160,14 +160,14 @@ class TrajectoryContext:
     def _start(self) -> None:
         """Start tracking this trajectory."""
         # check for nested trajectories
-        if trajectory_id_var.get() is not None:
+        if trajectory_context_id_var.get() is not None:
             raise RuntimeError(
                 "Nested trajectories are not supported. "
                 "Complete the current trajectory before starting a new one."
             )
 
         # set contextvar for async propagation
-        self._token = trajectory_id_var.set(self._trajectory_id)
+        self._token = trajectory_context_id_var.set(self._trajectory_id)
 
         # start an OTel span to mark trajectory boundaries
         # child spans (OpenAI calls) will inherit the trajectory_id attribute
@@ -198,7 +198,7 @@ class TrajectoryContext:
 
         # reset contextvar
         if self._token is not None:
-            trajectory_id_var.reset(self._token)
+            trajectory_context_id_var.reset(self._token)
 
         # collect spans and convert to messages
         spans = self._tracer._collector.pop_trajectory(self._trajectory_id)

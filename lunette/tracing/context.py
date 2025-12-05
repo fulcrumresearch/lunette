@@ -3,6 +3,12 @@
 from contextvars import ContextVar
 
 
-# tracks the current trajectory ID for async propagation
-# run_id is an instance variable on LunetteTracer (no contextvar needed)
-trajectory_id_var = ContextVar[str | None]("lunette_trajectory_id", default=None)
+trajectory_context_id_var = ContextVar[str | None](
+    "lunette_trajectory_context_id", default=None
+)
+"""
+Correlation ID for grouping OpenTelemetry spans by trajectory.
+
+Set on entry to `tracer.trajectory()`, injected into spans, reset on exit.
+Uses contextvar for async task isolation.
+"""

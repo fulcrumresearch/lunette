@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import SpanProcessor
 
-from lunette.tracing.context import trajectory_id_var
+from lunette.tracing.context import trajectory_context_id_var
 
 if TYPE_CHECKING:
     from opentelemetry.sdk.trace import ReadableSpan, Span
@@ -30,7 +30,7 @@ class SpanCollector(SpanProcessor):
 
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         """Called when a span starts. Inject trajectory_id from contextvar."""
-        traj_id = trajectory_id_var.get()
+        traj_id = trajectory_context_id_var.get()
         if traj_id:
             span.set_attribute("lunette.trajectory_id", traj_id)
 

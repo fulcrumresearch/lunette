@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 import pytest
 
-from lunette.tracing.context import trajectory_id_var
+from lunette.tracing.context import trajectory_context_id_var
 from lunette.tracing.span_collector import SpanCollector
 from lunette.tracing.span_converter import (
     _content_hash,
@@ -282,16 +282,16 @@ def test_convert_skips_non_openai():
 
 def test_trajectory_id_var_default():
     """Default value is None."""
-    assert trajectory_id_var.get() is None
+    assert trajectory_context_id_var.get() is None
 
 
 def test_trajectory_id_var_set_reset():
     """Can set and reset trajectory_id."""
-    token = trajectory_id_var.set("test-id")
-    assert trajectory_id_var.get() == "test-id"
+    token = trajectory_context_id_var.set("test-id")
+    assert trajectory_context_id_var.get() == "test-id"
 
-    trajectory_id_var.reset(token)
-    assert trajectory_id_var.get() is None
+    trajectory_context_id_var.reset(token)
+    assert trajectory_context_id_var.get() is None
 
 
 # --- Integration test with mocked OTel ---
