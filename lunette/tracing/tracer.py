@@ -6,7 +6,7 @@ import functools
 import inspect
 import os
 import uuid
-from typing import Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from opentelemetry import context as otel_context
 from opentelemetry import trace
@@ -20,6 +20,9 @@ from lunette.models.trajectory import Trajectory
 from lunette.tracing.context import trajectory_context_id_var
 from lunette.tracing.span_collector import SpanCollector
 from lunette.tracing.span_converter import convert_spans_to_messages
+
+if TYPE_CHECKING:
+    from opentelemetry.context import Token
 
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -195,7 +198,7 @@ class TrajectoryContext:
         self._trajectory_id = str(uuid.uuid4())
         self._token: Any = None
         self._span: trace.Span | None = None
-        self._otel_token: object | None = None
+        self._otel_token: Token | None = None
 
     def _start(self) -> None:
         """Start tracking this trajectory."""
