@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from lunette.models.messages import (
@@ -34,39 +36,15 @@ def _content_hash(role: str, content: str) -> str:
 def _extract_indexed_attributes(
     attributes: dict[str, Any], prefix: str
 ) -> list[dict[str, Any]]:
-    """Extract indexed attributes like gen_ai.prompt.0.role, gen_ai.prompt.1.role, etc.
-
-    Args:
-        attributes: Span attributes dict
-        prefix: Attribute prefix (e.g., "gen_ai.prompt")
-
-    Returns:
-        List of dicts, each containing the attributes for one indexed item
-    """
-    items: dict[int, dict[str, Any]] = {}
+    """Extract indexed attributes like gen_ai.prompt.0.role into a list of dicts."""
+    pattern = re.compile(rf"^{re.escape(prefix)}\.(\d+)\.(.+)$")
+    items: defaultdict[int, dict[str, Any]] = defaultdict(dict)
 
     for key, value in attributes.items():
-        if not key.startswith(prefix + "."):
-            continue
+        if match := pattern.match(key):
+            items[int(match[1])][match[2]] = value
 
-        # parse "gen_ai.prompt.0.role" -> index=0, field="role"
-        rest = key[len(prefix) + 1 :]
-        parts = rest.split(".", 1)
-        if len(parts) != 2:
-            continue
-
-        try:
-            index = int(parts[0])
-        except ValueError:
-            continue
-
-        field = parts[1]
-        if index not in items:
-            items[index] = {}
-        items[index][field] = value
-
-    # return sorted by index
-    return [items[i] for i in sorted(items.keys())]
+    return [items[i] for i in sorted(items)]
 
 
 def _parse_tool_calls(completion: dict[str, Any]) -> list[ToolCall] | None:
