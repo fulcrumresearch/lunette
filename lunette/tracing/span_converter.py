@@ -1,7 +1,7 @@
 """Converts OpenTelemetry spans to Lunette Message objects.
 
-The OpenAI instrumentation creates one span per API call with attributes following
-the GenAI semantic conventions:
+LLM instrumentation (OpenAI, Anthropic) creates one span per API call with
+attributes following the GenAI semantic conventions:
 - gen_ai.prompt.N.role / gen_ai.prompt.N.content - input messages
 - gen_ai.completion.N.role / gen_ai.completion.N.content - output messages
 - Tool calls embedded in completion attributes
@@ -232,12 +232,6 @@ def convert_spans_to_messages(spans: list[ReadableSpan]) -> list[Message]:
     position = 0
 
     for span in spans:
-        # only process spans that look like OpenAI chat completions
-        attributes = span.attributes or {}
-        gen_ai_system = attributes.get("gen_ai.system") or attributes.get("llm.system")
-        if gen_ai_system != "openai":
-            continue
-
         new_messages, position = _extract_messages_from_span(
             span, seen_hashes, tool_calls_by_id, position
         )

@@ -1,4 +1,4 @@
-"""Main tracing API for capturing OpenAI calls as Lunette Trajectories."""
+"""Main tracing API for capturing LLM calls as Lunette Trajectories."""
 
 from __future__ import annotations
 
@@ -10,11 +10,13 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from opentelemetry import context as otel_context
 from opentelemetry import trace
+from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
 from lunette.client import LunetteClient
+from lunette.logger import get_lunette_logger
 from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
 from lunette.tracing.context import trajectory_context_id_var
@@ -24,25 +26,26 @@ from lunette.tracing.span_converter import convert_spans_to_messages
 if TYPE_CHECKING:
     from opentelemetry.context import Token
 
-
 F = TypeVar("F", bound=Callable[..., Any])
+
+logger = get_lunette_logger(__name__)
 
 
 # one tracer per process
-_tracer_provider: TracerProvider | None = None
+_initialized: bool = False
 
 
 class LunetteTracer:
-    """Main entry point for tracing OpenAI calls as Lunette Trajectories.
+    """Main entry point for tracing LLM calls as Lunette Trajectories.
 
-    Initializes OpenTelemetry instrumentation and provides trajectory contexts
-    for grouping API calls into samples.
+    Initializes OpenTelemetry instrumentation for OpenAI and Anthropic,
+    and provides trajectory contexts for grouping API calls into samples.
 
     Example:
         tracer = LunetteTracer(task="math-eval", model="gpt-4o")
 
         async with tracer.trajectory(sample=1):
-            response = await openai_client.chat.completions.create(...)
+            response = await client.chat.completions.create(...)
 
         await tracer.close()
     """
@@ -57,56 +60,50 @@ class LunetteTracer:
         Raises:
             RuntimeError: If a LunetteTracer has already been created in this process
         """
-        if _tracer_provider is not None:
+        global _initialized
+        if _initialized:
             raise RuntimeError(
                 "Only one LunetteTracer can be created per process. "
                 "LunetteTracer is designed for single-use; restart the process for a new run."
             )
+        _initialized = True
 
         self.task = task
         self.model = model
         self.run_id = str(uuid.uuid4())
 
         self._trajectories: list[Trajectory] = []
-        self._collector: SpanCollector = SpanCollector()
-        self._provider: TracerProvider | None = None
-        self._otel_tracer: trace.Tracer | None = None
+        self._collector = SpanCollector()
+        self._provider = self._create_tracer_provider()
+        self._instrument_clients()
 
-        self._setup_otel()
+        self._provider.add_span_processor(self._collector)
+        self._otel_tracer = self._provider.get_tracer("lunette")
 
-    def _setup_otel(self) -> None:
-        """Configure OpenTelemetry with our SpanCollector."""
-        global _tracer_provider
+    def _create_tracer_provider(self) -> TracerProvider:
+        """Create an isolated tracer provider for Lunette."""
+        resource = Resource.create(
+            {
+                "service.name": "lunette-agent",
+                "lunette.task": self.task,
+                "lunette.model": self.model,
+                "lunette.run_id": self.run_id,
+            }
+        )
+        return TracerProvider(resource=resource)
 
-        instrumentor = OpenAIInstrumentor()
+    def _instrument_clients(self) -> None:
+        """Instrument LLM clients with our isolated tracer provider."""
+        # enable message content capture
+        os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
+        os.environ["TRACELOOP_TRACE_CONTENT"] = "true"
 
-        if instrumentor.is_instrumented_by_opentelemetry:
-            provider = trace.get_tracer_provider()
-            if not hasattr(provider, "add_span_processor"):
-                raise RuntimeError(
-                    "OpenAI is already instrumented, but no usable tracer provider is "
-                    "available. Configure an OpenTelemetry SDK tracer provider before "
-                    "creating a LunetteTracer."
-                )
-            _tracer_provider = provider  # type: ignore[assignment]
-        else:
-            resource = Resource.create(
-                {
-                    "service.name": "lunette-agent",
-                    "lunette.task": self.task,
-                    "lunette.model": self.model,
-                    "lunette.run_id": self.run_id,
-                }
-            )
-            _tracer_provider = TracerProvider(resource=resource)
-            trace.set_tracer_provider(_tracer_provider)
+        # instrument with explicit tracer_provider for isolation
+        OpenAIInstrumentor().instrument(tracer_provider=self._provider)
+        logger.debug("Instrumented OpenAI")
 
-            os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
-            instrumentor.instrument()
-
-        _tracer_provider.add_span_processor(self._collector)
-        self._provider = _tracer_provider
-        self._otel_tracer = trace.get_tracer("lunette")
+        AnthropicInstrumentor().instrument(tracer_provider=self._provider)
+        logger.debug("Instrumented Anthropic")
 
     def trajectory(self, sample: int | str, **metadata: Any) -> TrajectoryContext:
         """Create a context for tracking a single trajectory (sample).
@@ -188,7 +185,7 @@ class TrajectoryContext:
         self._token = trajectory_context_id_var.set(self._trajectory_id)
 
         # start an OTel span to mark trajectory boundaries
-        # child spans (OpenAI calls) will inherit the trajectory_id attribute
+        # child spans (LLM calls) will inherit the trajectory_id attribute
         if self._tracer._otel_tracer:
             self._span = self._tracer._otel_tracer.start_span(
                 name=f"trajectory_{self._sample}",

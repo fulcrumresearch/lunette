@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from lunette.tracing.context import trajectory_context_id_var
@@ -168,13 +170,13 @@ def test_span_collector_ignores_no_trajectory():
 # --- Test convert_spans_to_messages ---
 
 
-def _make_openai_span(
+def _make_llm_span(
     prompts: list[dict],
     completions: list[dict],
     start_time: int = 0,
 ) -> MagicMock:
-    """Create a mock span with OpenAI-style attributes."""
-    attrs = {"gen_ai.system": "openai"}
+    """Create a mock span with GenAI semantic convention attributes."""
+    attrs: dict[str, Any] = {}
 
     for i, p in enumerate(prompts):
         for key, value in p.items():
@@ -192,7 +194,7 @@ def _make_openai_span(
 
 def test_convert_simple_conversation():
     """Converts a simple user/assistant conversation."""
-    span = _make_openai_span(
+    span = _make_llm_span(
         prompts=[
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Hello"},
@@ -221,7 +223,7 @@ def test_convert_simple_conversation():
 def test_convert_deduplicates_prompts():
     """Doesn't duplicate messages that appear in multiple spans' prompts."""
     # first span: system + user -> assistant
-    span1 = _make_openai_span(
+    span1 = _make_llm_span(
         prompts=[
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Hello"},
@@ -233,7 +235,7 @@ def test_convert_deduplicates_prompts():
     )
 
     # second span: same prompts + previous assistant + new user -> new assistant
-    span2 = _make_openai_span(
+    span2 = _make_llm_span(
         prompts=[
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Hello"},
@@ -257,23 +259,6 @@ def test_convert_deduplicates_prompts():
         "How are you?",
         "I'm great!",
     ]
-
-
-def test_convert_skips_non_openai():
-    """Skips spans that aren't from OpenAI."""
-    openai_span = _make_openai_span(
-        prompts=[{"role": "user", "content": "Hello"}],
-        completions=[{"role": "assistant", "content": "Hi!"}],
-    )
-
-    other_span = MagicMock()
-    other_span.attributes = {"gen_ai.system": "anthropic"}
-    other_span.start_time = 0
-
-    messages = convert_spans_to_messages([other_span, openai_span])
-
-    # only the OpenAI span should be processed
-    assert len(messages) == 2
 
 
 # --- Test context var ---
@@ -301,74 +286,68 @@ def reset_tracer_state():
     """Reset global tracer state before and after each test."""
     import lunette.tracing.tracer as tracer_module
 
-    tracer_module._tracer_provider = None
+    tracer_module._initialized = False
     yield
-    tracer_module._tracer_provider = None
+    tracer_module._initialized = False
+
+
+@pytest.fixture
+def mock_instrumentors():
+    """Mock both OpenAI and Anthropic instrumentors."""
+    with (
+        patch("lunette.tracing.tracer.OpenAIInstrumentor") as mock_openai,
+        patch("lunette.tracing.tracer.AnthropicInstrumentor") as mock_anthropic,
+    ):
+        yield mock_openai, mock_anthropic
 
 
 @pytest.mark.asyncio
-async def test_tracer_basic_flow():
+async def test_tracer_basic_flow(mock_instrumentors):
     """Test full tracer flow with mocked OTel and client."""
-    # patch OpenAI instrumentation to avoid actually instrumenting
-    mock_instrumentor = MagicMock()
-    mock_instrumentor.is_instrumented_by_opentelemetry = False
-    with patch(
-        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
-    ):
-        from lunette.tracing import LunetteTracer
+    from lunette.tracing import LunetteTracer
 
-        tracer = LunetteTracer(task="test-task", model="gpt-4")
+    tracer = LunetteTracer(task="test-task", model="gpt-4")
 
-        # manually inject a span into the collector (simulating OpenAI call)
-        mock_span = _make_openai_span(
-            prompts=[{"role": "user", "content": "Test question"}],
-            completions=[{"role": "assistant", "content": "Test answer"}],
-        )
+    # manually inject a span into the collector (simulating OpenAI call)
+    mock_span = _make_llm_span(
+        prompts=[{"role": "user", "content": "Test question"}],
+        completions=[{"role": "assistant", "content": "Test answer"}],
+    )
 
-        # simulate what would happen inside a trajectory context
-        async with tracer.trajectory(sample=1) as ctx:
-            # inject span with the trajectory_id that was set
-            mock_span.attributes["lunette.trajectory_id"] = ctx._trajectory_id
-            tracer._collector.on_end(mock_span)
+    # simulate what would happen inside a trajectory context
+    async with tracer.trajectory(sample=1) as ctx:
+        # inject span with the trajectory_id that was set
+        mock_span.attributes["lunette.trajectory_id"] = ctx._trajectory_id
+        tracer._collector.on_end(mock_span)
 
-        # trajectory should be buffered
-        assert len(tracer._trajectories) == 1
-        traj = tracer._trajectories[0]
-        assert traj.sample == 1
-        assert len(traj.messages) == 2
-        assert traj.messages[0].content == "Test question"
-        assert traj.messages[1].content == "Test answer"
+    # trajectory should be buffered
+    assert len(tracer._trajectories) == 1
+    traj = tracer._trajectories[0]
+    assert traj.sample == 1
+    assert len(traj.messages) == 2
+    assert traj.messages[0].content == "Test question"
+    assert traj.messages[1].content == "Test answer"
 
 
 @pytest.mark.asyncio
-async def test_tracer_nested_trajectories_error():
+async def test_tracer_nested_trajectories_error(mock_instrumentors):
     """Nested trajectories should raise an error."""
-    mock_instrumentor = MagicMock()
-    mock_instrumentor.is_instrumented_by_opentelemetry = False
-    with patch(
-        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
-    ):
-        from lunette.tracing import LunetteTracer
+    from lunette.tracing import LunetteTracer
 
-        tracer = LunetteTracer(task="test", model="gpt-4")
+    tracer = LunetteTracer(task="test", model="gpt-4")
 
-        with pytest.raises(RuntimeError, match="Nested trajectories"):
-            async with tracer.trajectory(sample=1):
-                async with tracer.trajectory(sample=2):
-                    pass
+    with pytest.raises(RuntimeError, match="Nested trajectories"):
+        async with tracer.trajectory(sample=1):
+            async with tracer.trajectory(sample=2):
+                pass
 
 
 @pytest.mark.asyncio
-async def test_tracer_multiple_instances_error():
+async def test_tracer_multiple_instances_error(mock_instrumentors):
     """Creating a second tracer should raise an error (one tracer per process)."""
-    mock_instrumentor = MagicMock()
-    mock_instrumentor.is_instrumented_by_opentelemetry = False
-    with patch(
-        "lunette.tracing.tracer.OpenAIInstrumentor", return_value=mock_instrumentor
-    ):
-        from lunette.tracing import LunetteTracer
+    from lunette.tracing import LunetteTracer
 
-        _ = LunetteTracer(task="test1", model="gpt-4")
+    _ = LunetteTracer(task="test1", model="gpt-4")
 
-        with pytest.raises(RuntimeError, match="Only one LunetteTracer"):
-            LunetteTracer(task="test2", model="gpt-4")
+    with pytest.raises(RuntimeError, match="Only one LunetteTracer"):
+        LunetteTracer(task="test2", model="gpt-4")
