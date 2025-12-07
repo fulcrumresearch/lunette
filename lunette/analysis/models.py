@@ -53,10 +53,9 @@ class AnalysisPlan(BaseModel):
         "investigation",
         description="Plan type (currently only 'investigation' is supported)",
     )
-    agents: list[InvestigationAgent] = Field(
+    agent: InvestigationAgent = Field(
         ...,
-        description="List of agents to run on each matching trajectory",
-        min_length=1,
+        description="Agent to run on each matching trajectory",
     )
     trajectory_filters: TrajectoryFilters = Field(
         ..., description="Criteria for selecting trajectories to investigate"
