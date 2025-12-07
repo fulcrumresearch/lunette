@@ -23,6 +23,9 @@ from lunette.tracing import LunetteTracer
 
 load_dotenv()
 
+# small 10x10 red square PNG for testing (base64 encoded)
+TEST_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
+
 
 async def main():
     client = AsyncOpenAI()
@@ -74,6 +77,48 @@ async def main():
         )
         print(f"Turn 2: {response2.choices[0].message.content}\n")
 
+    # trajectory 3: image input (multimodal)
+    # NOTE: The OpenAI OTel instrumentation does NOT capture multimodal content.
+    # The API call works, but the image content is not recorded in the span.
+    # This is a known limitation of opentelemetry-instrumentation-openai.
+    print("=" * 50)
+    print("Trajectory 3: Image input (multimodal)")
+    print("=" * 50)
+
+    async with tracer.trajectory(sample=3):
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",  # need a vision-capable model
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "What color is this image? Reply in one word.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{TEST_IMAGE_BASE64}",
+                                "detail": "low",
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=50,
+        )
+        print(f"Response: {response.choices[0].message.content}")
+
+    # check what was captured (OpenAI instrumentation doesn't capture multimodal content)
+    image_traj = tracer._trajectories[-1]
+    user_msg = image_traj.messages[0]
+    print(f"Content type captured: {type(user_msg.content).__name__}")
+    print(f"Content: {repr(user_msg.content)[:100]}")
+    print(
+        "⚠ OpenAI instrumentation does not capture multimodal content (known limitation)\n"
+    )
+
     # print captured trajectories (without uploading)
     print("=" * 50)
     print("CAPTURED TRAJECTORIES")
@@ -85,10 +130,14 @@ async def main():
         )
         for msg in traj.messages:
             role = msg.role
-            content = (
-                msg.content[:80] + "..." if len(str(msg.content)) > 80 else msg.content
-            )
-            print(f"  [{msg.position}] {role}: {content}")
+            # handle both string and list content
+            if isinstance(msg.content, list):
+                content_str = f"[{len(msg.content)} content blocks]"
+            else:
+                content_str = (
+                    msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
+                )
+            print(f"  [{msg.position}] {role}: {content_str}")
 
     # show what would be uploaded
     print("\n" + "=" * 50)

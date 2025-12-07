@@ -17,10 +17,14 @@ import json
 from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
+from lunette.models.messages import Image, Text
 from lunette.models.run import Run
 from lunette.tracing import LunetteTracer
 
 load_dotenv()
+
+# small 10x10 red square PNG for testing (base64 encoded)
+TEST_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
 
 
 async def main():
@@ -76,6 +80,50 @@ async def main():
         )
         print(f"Turn 2: {response2.content[0].text}\n")
 
+    # trajectory 3: image input (multimodal)
+    print("=" * 50)
+    print("Trajectory 3: Image input (multimodal)")
+    print("=" * 50)
+
+    async with tracer.trajectory(sample=3):
+        response = await client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=50,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "What color is this image? Reply in one word.",
+                        },
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": TEST_IMAGE_BASE64,
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+        print(f"Response: {response.content[0].text}\n")
+
+    # verify image was captured
+    image_traj = tracer._trajectories[-1]
+    user_msg = image_traj.messages[0]
+    assert isinstance(user_msg.content, list), (
+        "Expected list content for multimodal message"
+    )
+    content_types = [type(c).__name__ for c in user_msg.content]
+    print(f"Captured content types: {content_types}")
+    assert any(isinstance(c, Image) for c in user_msg.content), (
+        "Expected Image in content"
+    )
+    print("✓ Image content captured correctly!\n")
+
     # print captured trajectories (without uploading)
     print("=" * 50)
     print("CAPTURED TRAJECTORIES")
@@ -87,10 +135,14 @@ async def main():
         )
         for msg in traj.messages:
             role = msg.role
-            content = (
-                msg.content[:80] + "..." if len(str(msg.content)) > 80 else msg.content
-            )
-            print(f"  [{msg.position}] {role}: {content}")
+            # handle both string and list content
+            if isinstance(msg.content, list):
+                content_str = f"[{len(msg.content)} content blocks]"
+            else:
+                content_str = (
+                    msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
+                )
+            print(f"  [{msg.position}] {role}: {content_str}")
 
     # show what would be uploaded
     print("\n" + "=" * 50)

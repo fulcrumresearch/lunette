@@ -17,8 +17,11 @@ from typing import TYPE_CHECKING, Any
 
 from lunette.models.messages import (
     AssistantMessage,
+    Content,
+    Image,
     Message,
     SystemMessage,
+    Text,
     ToolCall,
     ToolMessage,
     UserMessage,
@@ -28,9 +31,92 @@ if TYPE_CHECKING:
     from opentelemetry.sdk.trace import ReadableSpan
 
 
-def _content_hash(role: str, content: str) -> str:
+def _content_hash(role: str, content: str | list[Content]) -> str:
     """Create a hash of message content for deduplication."""
-    return hashlib.md5(f"{role}:{content}".encode()).hexdigest()
+    if isinstance(content, list):
+        # for multi-part content, hash the JSON representation
+        content_str = json.dumps([c.model_dump() for c in content], sort_keys=True)
+    else:
+        content_str = content
+    return hashlib.md5(f"{role}:{content_str}".encode()).hexdigest()
+
+
+def _parse_content(raw_content: Any) -> str | list[Content]:
+    """Parse message content from OTel attributes.
+
+    Content may be:
+    - A simple string
+    - A JSON string representing an array of content blocks
+    - Already a list/dict structure
+
+    Supported formats:
+    - OpenAI: [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}]
+    - Anthropic: [{"type": "text", "text": "..."}, {"type": "image", "source": {"type": "base64", "media_type": "...", "data": "..."}}]
+
+    Note: The Anthropic OTel instrumentation captures content in Anthropic's native format,
+    while the OpenAI instrumentation currently does not capture multimodal content at all.
+
+    Returns:
+        Either a string or a list of Content objects (Text, Image)
+    """
+    if raw_content is None:
+        return ""
+
+    # if it's already a string, try to parse as JSON array
+    if isinstance(raw_content, str):
+        try:
+            parsed = json.loads(raw_content)
+            if isinstance(parsed, list):
+                raw_content = parsed
+            else:
+                # not an array, treat as plain text
+                return raw_content
+        except (json.JSONDecodeError, TypeError):
+            # not JSON, treat as plain text
+            return raw_content
+
+    # if it's a list, convert each block to Content
+    if isinstance(raw_content, list):
+        result: list[Content] = []
+        for block in raw_content:
+            if not isinstance(block, dict):
+                continue
+
+            block_type = block.get("type", "")
+
+            match block_type:
+                case "text":
+                    text = block.get("text", "")
+                    if text:
+                        result.append(Text(text=text))
+
+                case "image_url":
+                    # OpenAI format: {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}
+                    image_data = block.get("image_url", {})
+                    if isinstance(image_data, dict):
+                        url = image_data.get("url", "")
+                        detail = image_data.get("detail", "auto")
+                        if detail not in ("auto", "low", "high"):
+                            detail = "auto"
+                        if url:
+                            result.append(Image(image=url, detail=detail))
+
+                case "image":
+                    # Anthropic format: {"type": "image", "source": {"type": "base64", "media_type": "...", "data": "..."}}
+                    source = block.get("source", {})
+                    if isinstance(source, dict) and source.get("type") == "base64":
+                        media_type = source.get("media_type", "image/png")
+                        data = source.get("data", "")
+                        if data:
+                            # convert to data URI format for consistency
+                            url = f"data:{media_type};base64,{data}"
+                            result.append(Image(image=url, detail="auto"))
+
+        if result:
+            return result
+
+    # fallback: convert to string
+    return str(raw_content)
 
 
 def _extract_indexed_attributes(
@@ -125,7 +211,7 @@ def _extract_messages_from_span(
     prompts = _extract_indexed_attributes(attributes, "gen_ai.prompt")
     for prompt in prompts:
         role = prompt.get("role", "")
-        content = str(prompt.get("content", ""))
+        content = _parse_content(prompt.get("content"))
 
         # skip if we've seen this exact message before
         msg_hash = _content_hash(role, content)
@@ -174,7 +260,7 @@ def _extract_messages_from_span(
     completions = _extract_indexed_attributes(attributes, "gen_ai.completion")
     for completion in completions:
         role = completion.get("role", "assistant")
-        content = str(completion.get("content", ""))
+        content = _parse_content(completion.get("content"))
 
         # completions are always new, but we still hash them to prevent re-adding if
         # they appear in the next span's prompts
