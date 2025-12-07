@@ -10,6 +10,8 @@ dependencies = [
     "opentelemetry-sdk>=1.39.0",
     "openai>=2.7.1",
     "opentelemetry-instrumentation-openai>=0.49.6",
+    "anthropic>=0.50.0",
+    "opentelemetry-instrumentation-anthropic>=0.37.0",
 ]
 
 [tool.uv]
