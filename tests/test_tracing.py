@@ -303,9 +303,13 @@ def reset_tracer_state():
 
     tracer_module._active_tracer = None
     tracer_module._tracer_provider = None
+    tracer_module._collector = None
+    tracer_module._collector_registered = False
     yield
     tracer_module._active_tracer = None
     tracer_module._tracer_provider = None
+    tracer_module._collector = None
+    tracer_module._collector_registered = False
 
 
 @pytest.mark.asyncio

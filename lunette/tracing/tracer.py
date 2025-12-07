@@ -24,9 +24,12 @@ from lunette.tracing.span_converter import convert_spans_to_messages
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+
 # module-level state
 _active_tracer: LunetteTracer | None = None
 _tracer_provider: TracerProvider | None = None
+_collector: SpanCollector | None = None
+_collector_registered: bool = False
 
 
 class LunetteTracer:
@@ -71,7 +74,7 @@ class LunetteTracer:
         self.run_id = str(uuid.uuid4())
 
         self._trajectories: list[Trajectory] = []
-        self._collector = SpanCollector()
+        self._collector: SpanCollector | None = None
         self._provider: TracerProvider | None = None
         self._otel_tracer: trace.Tracer | None = None
 
@@ -79,32 +82,48 @@ class LunetteTracer:
 
     def _setup_otel(self) -> None:
         """Configure OpenTelemetry with our SpanCollector."""
-        global _tracer_provider
+        global _tracer_provider, _collector, _collector_registered
 
         instrumentor = OpenAIInstrumentor()
 
-        if not instrumentor.is_instrumented_by_opentelemetry:
-            # first-time setup: create provider and instrument OpenAI
-            resource = Resource.create(
-                {
-                    "service.name": "lunette-agent",
-                    "lunette.task": self.task,
-                    "lunette.model": self.model,
-                    "lunette.run_id": self.run_id,
-                }
-            )
+        if instrumentor.is_instrumented_by_opentelemetry:
+            provider = trace.get_tracer_provider()
+            if not hasattr(provider, "add_span_processor"):
+                raise RuntimeError(
+                    "OpenAI is already instrumented, but no usable tracer provider is "
+                    "available. Configure an OpenTelemetry SDK tracer provider before "
+                    "creating a LunetteTracer."
+                )
+            _tracer_provider = provider  # type: ignore[assignment]
+        else:
+            if _tracer_provider is None:
+                resource = Resource.create(
+                    {
+                        "service.name": "lunette-agent",
+                        "lunette.task": self.task,
+                        "lunette.model": self.model,
+                        "lunette.run_id": self.run_id,
+                    }
+                )
 
-            _tracer_provider = TracerProvider(resource=resource)
-            trace.set_tracer_provider(_tracer_provider)
+                _tracer_provider = TracerProvider(resource=resource)
+                trace.set_tracer_provider(_tracer_provider)
 
             os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
             instrumentor.instrument()
 
-        # use the shared provider
-        self._provider = _tracer_provider
+        if _tracer_provider is None:
+            raise RuntimeError("Failed to initialize OpenTelemetry tracer provider.")
 
-        # always add our collector and get a tracer
-        self._provider.add_span_processor(self._collector)
+        if _collector is None:
+            _collector = SpanCollector()
+        self._collector = _collector
+
+        if not _collector_registered:
+            _tracer_provider.add_span_processor(self._collector)
+            _collector_registered = True
+
+        self._provider = _tracer_provider
         self._otel_tracer = trace.get_tracer("lunette")
 
     def trajectory(self, sample: int | str, **metadata: Any) -> TrajectoryContext:
@@ -222,6 +241,11 @@ class TrajectoryContext:
             trajectory_context_id_var.reset(self._token)
 
         # collect spans and convert to messages
+        if self._tracer._collector is None:
+            raise RuntimeError(
+                "Tracer collector not initialized; tracing setup failed."
+            )
+
         spans = self._tracer._collector.pop_trajectory(self._trajectory_id)
         messages = convert_spans_to_messages(spans)
 
