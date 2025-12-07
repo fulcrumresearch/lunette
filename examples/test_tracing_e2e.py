@@ -17,6 +17,7 @@ import json
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
+from lunette.models.run import Run
 from lunette.tracing import LunetteTracer
 
 
@@ -93,7 +94,6 @@ async def main():
     print("\n" + "=" * 50)
     print("RUN PAYLOAD (what would be uploaded)")
     print("=" * 50)
-
 
     run = Run(
         id=tracer.run_id,
