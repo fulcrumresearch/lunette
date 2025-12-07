@@ -28,11 +28,8 @@ if TYPE_CHECKING:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-# module-level state
-_active_tracer: LunetteTracer | None = None
+# one tracer per process
 _tracer_provider: TracerProvider | None = None
-_collector: SpanCollector | None = None
-_collector_registered: bool = False
 
 
 class LunetteTracer:
@@ -50,11 +47,7 @@ class LunetteTracer:
         await tracer.close()
     """
 
-    def __init__(
-        self,
-        task: str,
-        model: str,
-    ) -> None:
+    def __init__(self, task: str, model: str) -> None:
         """Initialize the Lunette tracing system.
 
         Args:
@@ -62,22 +55,20 @@ class LunetteTracer:
             model: The name of the model (e.g., 'gpt-4o')
 
         Raises:
-            RuntimeError: If another LunetteTracer is already active
+            RuntimeError: If a LunetteTracer has already been created in this process
         """
-        global _active_tracer
-        if _active_tracer is not None:
+        if _tracer_provider is not None:
             raise RuntimeError(
-                "Only one LunetteTracer can be active at a time. "
-                "Call close() on the existing tracer before creating a new one."
+                "Only one LunetteTracer can be created per process. "
+                "LunetteTracer is designed for single-use; restart the process for a new run."
             )
-        _active_tracer = self
 
         self.task = task
         self.model = model
         self.run_id = str(uuid.uuid4())
 
         self._trajectories: list[Trajectory] = []
-        self._collector: SpanCollector | None = None
+        self._collector: SpanCollector = SpanCollector()
         self._provider: TracerProvider | None = None
         self._otel_tracer: trace.Tracer | None = None
 
@@ -85,7 +76,7 @@ class LunetteTracer:
 
     def _setup_otel(self) -> None:
         """Configure OpenTelemetry with our SpanCollector."""
-        global _tracer_provider, _collector, _collector_registered
+        global _tracer_provider
 
         instrumentor = OpenAIInstrumentor()
 
@@ -99,33 +90,21 @@ class LunetteTracer:
                 )
             _tracer_provider = provider  # type: ignore[assignment]
         else:
-            if _tracer_provider is None:
-                resource = Resource.create(
-                    {
-                        "service.name": "lunette-agent",
-                        "lunette.task": self.task,
-                        "lunette.model": self.model,
-                        "lunette.run_id": self.run_id,
-                    }
-                )
-
-                _tracer_provider = TracerProvider(resource=resource)
-                trace.set_tracer_provider(_tracer_provider)
+            resource = Resource.create(
+                {
+                    "service.name": "lunette-agent",
+                    "lunette.task": self.task,
+                    "lunette.model": self.model,
+                    "lunette.run_id": self.run_id,
+                }
+            )
+            _tracer_provider = TracerProvider(resource=resource)
+            trace.set_tracer_provider(_tracer_provider)
 
             os.environ["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] = "true"
             instrumentor.instrument()
 
-        if _tracer_provider is None:
-            raise RuntimeError("Failed to initialize OpenTelemetry tracer provider.")
-
-        if _collector is None:
-            _collector = SpanCollector()
-        self._collector = _collector
-
-        if not _collector_registered:
-            _tracer_provider.add_span_processor(self._collector)
-            _collector_registered = True
-
+        _tracer_provider.add_span_processor(self._collector)
         self._provider = _tracer_provider
         self._otel_tracer = trace.get_tracer("lunette")
 
@@ -162,10 +141,6 @@ class LunetteTracer:
         Returns:
             Dict with run_id and trajectory_ids from the server response
         """
-        global _active_tracer
-        _active_tracer = None
-
-        # flush (but don't shutdown) the provider - it's shared across tracer instances
         if self._provider:
             self._provider.force_flush()
 
@@ -244,11 +219,6 @@ class TrajectoryContext:
             trajectory_context_id_var.reset(self._token)
 
         # collect spans and convert to messages
-        if self._tracer._collector is None:
-            raise RuntimeError(
-                "Tracer collector not initialized; tracing setup failed."
-            )
-
         spans = self._tracer._collector.pop_trajectory(self._trajectory_id)
         messages = convert_spans_to_messages(spans)
 

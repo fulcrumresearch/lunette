@@ -301,15 +301,9 @@ def reset_tracer_state():
     """Reset global tracer state before and after each test."""
     import lunette.tracing.tracer as tracer_module
 
-    tracer_module._active_tracer = None
     tracer_module._tracer_provider = None
-    tracer_module._collector = None
-    tracer_module._collector_registered = False
     yield
-    tracer_module._active_tracer = None
     tracer_module._tracer_provider = None
-    tracer_module._collector = None
-    tracer_module._collector_registered = False
 
 
 @pytest.mark.asyncio
@@ -366,7 +360,7 @@ async def test_tracer_nested_trajectories_error():
 
 @pytest.mark.asyncio
 async def test_tracer_multiple_instances_error():
-    """Creating a second tracer without closing the first should raise an error."""
+    """Creating a second tracer should raise an error (one tracer per process)."""
     mock_instrumentor = MagicMock()
     mock_instrumentor.is_instrumented_by_opentelemetry = False
     with patch(
@@ -378,11 +372,3 @@ async def test_tracer_multiple_instances_error():
 
         with pytest.raises(RuntimeError, match="Only one LunetteTracer"):
             LunetteTracer(task="test2", model="gpt-4")
-
-        # after closing, we can create a new one
-        import lunette.tracing.tracer as tracer_module
-
-        tracer_module._active_tracer = None  # simulate close()
-
-        tracer2 = LunetteTracer(task="test2", model="gpt-4")
-        assert tracer2.task == "test2"
