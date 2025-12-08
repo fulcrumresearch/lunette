@@ -1,7 +1,6 @@
 """Inspect AI hooks for auto-saving runs."""
 
 import logging
-import uuid
 from pathlib import Path
 
 from inspect_ai.hooks import Hooks, SampleEnd, TaskEnd, TaskStart, hooks
