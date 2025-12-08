@@ -17,7 +17,7 @@ import json
 from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
-from lunette.models.messages import Image, Text
+from lunette.models.messages import Image
 from lunette.models.run import Run
 from lunette.tracing import LunetteTracer
 
