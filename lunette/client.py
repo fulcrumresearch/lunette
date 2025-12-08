@@ -227,6 +227,9 @@ class LunetteClient:
         if dockerfile_content:
             data["dockerfile"] = dockerfile_content
 
+        # Send full service spec as JSON string (includes working_dir, environment, etc.)
+        data["service"] = json.dumps(service)
+
         response = await self._client.post(
             "/sandboxes",
             data=data if data else None,
