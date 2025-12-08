@@ -316,7 +316,9 @@ class LunetteClient:
         response.raise_for_status()
         return Trajectory.model_validate(response.json())
 
-    async def launch_investigation(self, plan: str, run_id: str, limit: int = 10) -> dict:
+    async def launch_investigation(
+        self, plan: str, run_id: str, limit: int = 10
+    ) -> dict:
         """Launch an investigation using a plan YAML.
 
         Args:
@@ -335,7 +337,11 @@ class LunetteClient:
 
         response = await self._client.post(
             "/investigations/run",
-            json={"plan": plan_obj.model_dump(mode="python"), "run_id": run_id, "limit": limit},
+            json={
+                "plan": plan_obj.model_dump(mode="python"),
+                "run_id": run_id,
+                "limit": limit,
+            },
             timeout=None,
         )
         response.raise_for_status()

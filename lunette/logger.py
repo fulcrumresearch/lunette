@@ -34,14 +34,14 @@ def get_lunette_logger(name: str) -> logging.Logger:
             log_file,
             maxBytes=10 * 1024 * 1024,  # 10MB
             backupCount=5,
-            encoding="utf-8"
+            encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)
 
         # Create formatter
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         file_handler.setFormatter(formatter)
 
