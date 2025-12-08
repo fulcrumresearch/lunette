@@ -96,9 +96,7 @@ class Sandbox:
             SandboxError: For other sandbox-related errors
         """
         if self._destroyed:
-            raise SandboxDestroyedError(
-                f"Sandbox {self.sandbox_id} has been destroyed"
-            )
+            raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
 
         logger.debug(f"[{self.sandbox_id}] Executing command: {cmd}")
 
@@ -150,9 +148,7 @@ class Sandbox:
             SandboxError: For other sandbox-related errors
         """
         if self._destroyed:
-            raise SandboxDestroyedError(
-                f"Sandbox {self.sandbox_id} has been destroyed"
-            )
+            raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
 
         logger.debug(
             f"[{self.sandbox_id}] Uploading file: {local_path} -> {remote_path}"
@@ -181,9 +177,7 @@ class Sandbox:
         )
 
         response.raise_for_status()
-        logger.info(
-            f"[{self.sandbox_id}] Successfully uploaded file to {remote_path}"
-        )
+        logger.info(f"[{self.sandbox_id}] Successfully uploaded file to {remote_path}")
 
     async def adownload(
         self,
@@ -202,9 +196,7 @@ class Sandbox:
             SandboxError: For other sandbox-related errors
         """
         if self._destroyed:
-            raise SandboxDestroyedError(
-                f"Sandbox {self.sandbox_id} has been destroyed"
-            )
+            raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
 
         logger.debug(
             f"[{self.sandbox_id}] Downloading file: {remote_path} -> {local_path}"
@@ -235,9 +227,7 @@ class Sandbox:
         with open(local_path, "wb") as f:
             f.write(content_bytes)
 
-        logger.info(
-            f"[{self.sandbox_id}] Successfully downloaded file to {local_path}"
-        )
+        logger.info(f"[{self.sandbox_id}] Successfully downloaded file to {local_path}")
 
     async def destroy(self) -> None:
         """Destroy the sandbox and clean up resources.

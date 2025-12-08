@@ -1,10 +1,10 @@
 """Inspect AI hooks for auto-saving runs."""
 
 import logging
-import uuid
 from pathlib import Path
 
 from inspect_ai.hooks import Hooks, SampleEnd, TaskEnd, TaskStart, hooks
+from inspect_ai.log import resolve_sample_attachments
 
 from lunette.client import LunetteClient
 from lunette.models.run import Run
@@ -72,8 +72,12 @@ class LunetteLoggerHook(Hooks):
             return
 
         try:
+            # resolve attachments (e.g., images) so they are embedded in the messages
+            # this replaces `attachment://` references with the actual content (base64)
+            sample = resolve_sample_attachments(data.sample, resolve_attachments=True)
+
             trajectory = Trajectory.from_inspect(
-                sample=data.sample,
+                sample=sample,
             )
 
             self.trajectories.append(trajectory)
