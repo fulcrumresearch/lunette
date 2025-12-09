@@ -70,7 +70,6 @@ class LunetteTracer:
 
         self.task = task
         self.model = model
-        self.run_id = str(uuid.uuid4())
 
         self._trajectories: list[Trajectory] = []
         self._collector = SpanCollector()
@@ -87,7 +86,6 @@ class LunetteTracer:
                 "service.name": "lunette-agent",
                 "lunette.task": self.task,
                 "lunette.model": self.model,
-                "lunette.run_id": self.run_id,
             }
         )
         return TracerProvider(resource=resource)
@@ -142,10 +140,10 @@ class LunetteTracer:
             self._provider.force_flush()
 
         if not self._trajectories:
-            return {"run_id": self.run_id, "trajectory_ids": []}
+            return {"run_id": None, "trajectory_ids": []}
 
         run = Run(
-            id=self.run_id,
+            id=None,  # let server generate ID for new runs
             task=self.task,
             model=self.model,
             trajectories=self._trajectories,
