@@ -32,18 +32,18 @@ Lunette can capture your agent's work in two ways:
 
 <div class="grid cards" markdown>
 
--   :material-code-braces: **[Transcript: Custom Agents](custom-agents.md)**
+-   :material-code-braces: **[Custom Agent Loop](custom-agents.md)**
 
     ---
 
-    Wrap your LLM calls with the tracer:
+    Wrap your LLM calls with the tracer. Supports both transcript-only and full environment capture.
 
     ```python
     async with tracer.trajectory(sample=1):
         response = await client.chat(...)
     ```
 
--   :material-flask: **[Environment: Inspect AI](inspect-ai.md)**
+-   :material-flask: **[Inspect AI](inspect-ai.md)**
 
     ---
 

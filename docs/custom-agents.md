@@ -9,7 +9,11 @@ If you have your own agent code (not using Inspect AI), use `LunetteTracer` to c
 3. Make your LLM calls inside the context — they're captured automatically
 4. Call `tracer.close()` to upload
 
-## Example with OpenAI
+## Transcript only
+
+These examples capture just the conversation (no environment access).
+
+### OpenAI
 
 ```python
 --8<-- "examples/transcript/openai.py"
@@ -21,11 +25,29 @@ Run it:
 uv run python examples/transcript/openai.py
 ```
 
-## Example with Anthropic
+### Anthropic
 
 ```python
 --8<-- "examples/transcript/anthropic.py"
 ```
+
+## Transcript + Environment
+
+To capture both the conversation and a sandbox environment that investigators can access later, combine `LunetteTracer` with `LunetteClient.create_sandbox()`.
+
+This example runs an agent that solves a coding problem in a cloud sandbox:
+
+```python
+--8<-- "examples/environment/custom_task.py"
+```
+
+Run it:
+
+```bash
+uv run python examples/environment/custom_task.py
+```
+
+The trajectory is uploaded with the sandbox ID, so investigators can later access the environment to inspect files, re-run commands, and debug issues.
 
 ## Key concepts
 
