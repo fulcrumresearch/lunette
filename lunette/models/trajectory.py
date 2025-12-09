@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 
 
@@ -12,7 +13,6 @@ from inspect_ai.model import (
     ChatMessageUser,
     ChatMessageTool,
 )
-from inspect_ai.scorer import Score
 
 from lunette.models.messages import (
     AssistantMessage,
@@ -22,6 +22,44 @@ from lunette.models.messages import (
     ToolMessage,
     UserMessage,
 )
+
+
+def _sanitize_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Convert non-JSON-serializable values (like Enums) to serializable forms."""
+    sanitized = {}
+    for key, value in metadata.items():
+        if isinstance(value, Enum):
+            sanitized[key] = value.value
+        elif isinstance(value, dict):
+            sanitized[key] = _sanitize_metadata(value)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                item.value if isinstance(item, Enum) else item
+                for item in value
+            ]
+        else:
+            sanitized[key] = value
+    return sanitized
+
+
+def _normalize_score_value(value: Any) -> float:
+    """Convert a score value (C/P/I, string, number) to a float."""
+    match value:
+        case "C":
+            return 1.0
+        case "P":
+            return 0.5
+        case "I":
+            return 0.0
+        case str():
+            try:
+                return float(value)
+            except ValueError:
+                raise ValueError(f"Invalid score value string '{value}'")
+        case int() | float() | bool():
+            return float(value)
+        case _:
+            raise ValueError(f"Cannot normalize score value: {value}")
 
 
 class ScalarScore(BaseModel):
@@ -38,37 +76,6 @@ class ScalarScore(BaseModel):
 
     metadata: dict[str, Any] | None = None
     """Additional metadata about the score."""
-
-    @classmethod
-    def from_inspect(cls, score: Score) -> ScalarScore:
-        """Convert an Inspect AI `Score` to a `ScalarScore`."""
-
-        try:
-            value: str | int | float | bool = score._as_scalar()
-        except ValueError:
-            raise ValueError("Score is not a scalar")
-
-        match value:
-            case "C":
-                value = 1.0
-            case "P":
-                value = 0.5
-            case "I":
-                value = 0.0
-            case str():
-                try:
-                    value = float(value)
-                except ValueError:
-                    raise ValueError(f"Invalid score value string '{value}'")
-            case int() | float() | bool():
-                value = float(value)
-
-        return cls(
-            value=value,
-            answer=score.answer,
-            explanation=score.explanation,
-            metadata=score.metadata,
-        )
 
 
 class Trajectory(BaseModel):
@@ -120,15 +127,29 @@ class Trajectory(BaseModel):
         if sample.error:
             raise ValueError(f"Sample {sample.id} has an error: {sample.error.message}")
 
-        # start by extracting scores, so we fail fast if they aren't scalars
-        scores: dict[str, ScalarScore] | None = (
-            {
-                name: ScalarScore.from_inspect(score)
-                for name, score in sample.scores.items()
-            }
-            if sample.scores is not None
-            else None
-        )
+        # Extract scores - handle both scalar values and dict values (e.g. control_arena)
+        scores: dict[str, ScalarScore] | None = None
+        if sample.scores is not None:
+            scores = {}
+            for name, score in sample.scores.items():
+                if isinstance(score.value, dict):
+                    # Dict score - split into separate entries with composite names
+                    for subkey, subvalue in score.value.items():
+                        composite_name = f"{name}/{subkey}" if name else subkey
+                        scores[composite_name] = ScalarScore(
+                            value=_normalize_score_value(subvalue),
+                            answer=score.answer,
+                            explanation=score.explanation,
+                            metadata=score.metadata,
+                        )
+                else:
+                    # Scalar score
+                    scores[name] = ScalarScore(
+                        value=_normalize_score_value(score.value),
+                        answer=score.answer,
+                        explanation=score.explanation,
+                        metadata=score.metadata,
+                    )
 
         # convert InspectAI `ChatMessage`s to our `Message`s
         messages: list[Message] = []
@@ -171,7 +192,7 @@ class Trajectory(BaseModel):
             sample=sample.id,
             messages=messages,
             scores=scores,
-            metadata=sample.metadata,
+            metadata=_sanitize_metadata(sample.metadata),
             solution=solution,
             sandbox_id=sandbox_id,
         )
