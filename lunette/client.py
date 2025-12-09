@@ -71,8 +71,9 @@ class LunetteClient:
 
     Provides methods for creating and managing sandbox environments.
 
-    By default, the client loads configuration from ~/.lunette/config.json.
-    You can override this by providing explicit parameters or a custom config path.
+    By default, the client loads configuration from ~/.lunette/config.json
+    (or from $LUNETTE_HOME_DIR/config.json if set).
+    You can override config values by providing explicit parameters.
 
     Example:
         # Load from default config file (~/.lunette/config.json)
@@ -85,10 +86,6 @@ class LunetteClient:
             base_url="https://api.lunette.dev",
             api_key="your-api-key"
         ) as client:
-            sandbox = await client.create_sandbox(service)
-
-        # Load from custom config file
-        async with LunetteClient(config_path="./my-config.json") as client:
             sandbox = await client.create_sandbox(service)
     """
 
@@ -107,7 +104,6 @@ class LunetteClient:
             base_url: Base URL for the Lunette API (e.g., "https://api.lunette.dev")
             api_key: API key for authentication
             timeout: Request timeout in seconds (default: 30)
-            config_path: Path to config file (default: ~/.lunette/config.json)
 
         Raises:
             FileNotFoundError: If config file is needed but not found
