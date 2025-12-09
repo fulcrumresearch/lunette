@@ -136,17 +136,14 @@ class LunetteClient:
         self.base_url = base_url or config_data.get(
             "base_url", "https://app.fulcrumresearch.ai/api"
         )
-        self.api_key = api_key or config_data.get("api_key", "___")
+        self.api_key = api_key or config_data.get("api_key")
         self.timeout = timeout or config_data.get("timeout", 200)
 
         # Validate required fields
-        if not self.base_url:
-            raise ValueError(
-                "base_url is required (provide explicitly or in config file)"
-            )
         if not self.api_key:
             raise ValueError(
-                "api_key is required (provide explicitly or in config file)"
+                "api_key is required: provide via LunetteClient(api_key=...) "
+                "or in ~/.lunette/config.json"
             )
 
         self._client = httpx.AsyncClient(
