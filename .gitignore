@@ -4,3 +4,5 @@ inspect_morph/__pycache__/
 **/__pycache__/
 logs/
 
+# MkDocs build output
+site/
