@@ -63,6 +63,36 @@ def test_extract_indexed_attributes_empty():
     assert result == []
 
 
+def test_extract_indexed_attributes_nested_tool_calls():
+    """Extracts nested tool_calls attributes correctly."""
+    attrs = {
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.tool_calls.0.name": "search",
+        "gen_ai.completion.0.tool_calls.0.arguments": '{"q": "test"}',
+        "gen_ai.completion.0.tool_calls.0.id": "call_abc",
+        "gen_ai.completion.0.tool_calls.1.name": "lookup",
+        "gen_ai.completion.0.tool_calls.1.arguments": '{"id": 123}',
+        "gen_ai.completion.0.tool_calls.1.id": "call_def",
+    }
+
+    result = _extract_indexed_attributes(attrs, "gen_ai.completion")
+
+    assert len(result) == 1
+    assert result[0]["role"] == "assistant"
+    assert "tool_calls" in result[0]
+    assert len(result[0]["tool_calls"]) == 2
+    assert result[0]["tool_calls"][0] == {
+        "name": "search",
+        "arguments": '{"q": "test"}',
+        "id": "call_abc",
+    }
+    assert result[0]["tool_calls"][1] == {
+        "name": "lookup",
+        "arguments": '{"id": 123}',
+        "id": "call_def",
+    }
+
+
 def test_parse_tool_calls_json_string():
     """Parses tool_calls from JSON string."""
     completion = {
@@ -99,6 +129,26 @@ def test_parse_tool_calls_none():
     completion = {"role": "assistant", "content": "Hello!"}
     result = _parse_tool_calls(completion)
     assert result is None
+
+
+def test_parse_tool_calls_otel_nested_format():
+    """Parses tool_calls in OTel nested format (name/arguments/id directly)."""
+    # this is what _extract_indexed_attributes produces from:
+    # gen_ai.completion.0.tool_calls.0.name, .arguments, .id
+    completion = {
+        "role": "assistant",
+        "tool_calls": [
+            {"name": "multiply", "arguments": '{"a": 7, "b": 8}', "id": "call_123"}
+        ],
+    }
+
+    result = _parse_tool_calls(completion)
+
+    assert result is not None
+    assert len(result) == 1
+    assert result[0].id == "call_123"
+    assert result[0].function == "multiply"
+    assert result[0].arguments == {"a": 7, "b": 8}
 
 
 # --- Test SpanCollector ---
@@ -259,6 +309,73 @@ def test_convert_deduplicates_prompts():
         "How are you?",
         "I'm great!",
     ]
+
+
+def test_convert_with_tool_calls():
+    """Converts tool call and tool result messages correctly."""
+    from lunette.models.messages import ToolMessage
+
+    # first span: user asks, assistant responds with tool call
+    # uses OTel nested format: gen_ai.completion.0.tool_calls.0.name, etc.
+    span1_attrs = {
+        "gen_ai.prompt.0.role": "system",
+        "gen_ai.prompt.0.content": "You are helpful",
+        "gen_ai.prompt.1.role": "user",
+        "gen_ai.prompt.1.content": "What is 7 times 8?",
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.tool_calls.0.name": "multiply",
+        "gen_ai.completion.0.tool_calls.0.arguments": '{"a": 7, "b": 8}',
+        "gen_ai.completion.0.tool_calls.0.id": "call_123",
+    }
+    span1 = MagicMock()
+    span1.attributes = span1_attrs
+    span1.start_time = 100
+
+    # second span: includes previous messages + tool result
+    span2_attrs = {
+        "gen_ai.prompt.0.role": "system",
+        "gen_ai.prompt.0.content": "You are helpful",
+        "gen_ai.prompt.1.role": "user",
+        "gen_ai.prompt.1.content": "What is 7 times 8?",
+        "gen_ai.prompt.2.role": "assistant",
+        "gen_ai.prompt.2.tool_calls.0.name": "multiply",
+        "gen_ai.prompt.2.tool_calls.0.arguments": '{"a": 7, "b": 8}',
+        "gen_ai.prompt.2.tool_calls.0.id": "call_123",
+        "gen_ai.prompt.3.role": "tool",
+        "gen_ai.prompt.3.content": "56",
+        "gen_ai.prompt.3.tool_call_id": "call_123",
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.content": "7 times 8 is 56.",
+    }
+    span2 = MagicMock()
+    span2.attributes = span2_attrs
+    span2.start_time = 200
+
+    messages = convert_spans_to_messages([span1, span2])
+
+    # should be: system, user, assistant (with tool call), tool, assistant (final)
+    assert len(messages) == 5
+
+    assert isinstance(messages[0], SystemMessage)
+    assert messages[0].content == "You are helpful"
+
+    assert isinstance(messages[1], UserMessage)
+    assert messages[1].content == "What is 7 times 8?"
+
+    assert isinstance(messages[2], AssistantMessage)
+    assert messages[2].content == ""
+    assert messages[2].tool_calls is not None
+    assert len(messages[2].tool_calls) == 1
+    assert messages[2].tool_calls[0].function == "multiply"
+    assert messages[2].tool_calls[0].id == "call_123"
+
+    assert isinstance(messages[3], ToolMessage)
+    assert messages[3].content == "56"
+    assert messages[3].tool_call.id == "call_123"
+    assert messages[3].tool_call.function == "multiply"
+
+    assert isinstance(messages[4], AssistantMessage)
+    assert messages[4].content == "7 times 8 is 56."
 
 
 # --- Test context var ---
