@@ -161,14 +161,14 @@ class LunetteClient:
 
     async def create_sandbox(
         self,
-        service: ComposeService,
+        service: ComposeService | Path | str,
     ) -> Sandbox:
         """Create a sandbox by either pulling an image or building from context.
 
         Args:
-            service: Docker Compose service specification containing either:
-                - image: str (pull from registry)
-                - build: str | dict (build from context)
+            service: One of:
+                - Path or str: Path to a directory containing a Dockerfile
+                - dict: Docker Compose service specification with 'image' or 'build' key
 
         Returns:
             Sandbox instance ready for use
@@ -178,6 +178,9 @@ class LunetteClient:
             ValueError: If response format is invalid
             httpx.HTTPError: For HTTP-related errors
         """
+        # convert path to service dict
+        if isinstance(service, (Path, str)):
+            service = {"build": {"context": str(service)}}
         image_name: Optional[str] = None
         tar_file = None
         dockerfile_content: Optional[str] = None

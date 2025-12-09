@@ -117,35 +117,34 @@ asyncio.run(main())
 
 ### Creating a Sandbox
 
-You define a sandbox using a **Service Dictionary** (similar to Docker Compose). You can either pull an existing image or build one from a local directory.
-
-**Option A: Pull an Image**
+The simplest way to create a sandbox is to point to a directory containing a Dockerfile:
 
 ```python
-service_config = {
-    "image": "python:3.11-slim",
-    "command": "tail -f /dev/null",  # Important: Keep the container running!
-    "working_dir": "/workspace"
-}
-
-sandbox = await client.create_sandbox(service_config)
+sandbox = await client.create_sandbox("./my-agent-code")
 print(f"Sandbox created with ID: {sandbox.sandbox_id}")
 ```
 
-**Option B: Build from Source**
+Lunette reads the Dockerfile, bundles the build context (respecting `.dockerignore`), and builds the image remotely.
+
+**Advanced: Service Dictionary**
+
+For more control, pass a service dictionary (similar to Docker Compose):
 
 ```python
-service_config = {
-    "build": {
-        "context": "./my-agent-code"  # Path to local directory containing Dockerfile
-    },
-    "command": "python agent.py"
-}
+# Pull an existing image
+sandbox = await client.create_sandbox({
+    "image": "python:3.11-slim",
+    "command": "tail -f /dev/null",  # keep the container running
+    "working_dir": "/workspace"
+})
 
-sandbox = await client.create_sandbox(service_config)
+# Build with additional options
+sandbox = await client.create_sandbox({
+    "build": {"context": "./my-agent-code"},
+    "command": "python agent.py",
+    "working_dir": "/app"
+})
 ```
-
-*Note: Lunette respects your `.dockerignore` file when uploading build contexts.*
 
 ### Executing Commands
 
@@ -182,7 +181,7 @@ await sandbox.destroy()
 
 ## Service Specification Reference
 
-The `service` dictionary passed to `create_sandbox` (and used in `compose.yaml` for Inspect) supports a subset of the [Docker Compose V2 specification](https://docs.docker.com/compose/compose-file/).
+When using a service dictionary with `create_sandbox`, Lunette supports a subset of the [Docker Compose V2 specification](https://docs.docker.com/compose/compose-file/).
 
 | Field | Description | Example |
 | :--- | :--- | :--- |
