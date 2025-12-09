@@ -16,6 +16,7 @@ from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
 from lunette.sandbox import Sandbox
 
+
 logger = get_lunette_logger(__name__)
 
 
@@ -71,79 +72,52 @@ class LunetteClient:
 
     Provides methods for creating and managing sandbox environments.
 
-    By default, the client loads configuration from ~/.lunette/config.json
-    (or from $LUNETTE_HOME_DIR/config.json if set).
-    You can override config values by providing explicit parameters.
+    Configuration is loaded from (highest priority first):
+        1. Explicit arguments to __init__
+        2. Environment variables (LUNETTE_API_KEY, LUNETTE_BASE_URL)
+        3. Config file (~/.lunette/config.json)
 
     Example:
-        # Load from default config file (~/.lunette/config.json)
+        # Uses env var LUNETTE_API_KEY or ~/.lunette/config.json
         async with LunetteClient() as client:
-            service = {"image": "ubuntu:22.04"}
-            sandbox = await client.create_sandbox(service)
-
-        # Override with explicit parameters
-        async with LunetteClient(
-            base_url="https://api.lunette.dev",
-            api_key="your-api-key"
-        ) as client:
-            sandbox = await client.create_sandbox(service)
+            sandbox = await client.create_sandbox({"image": "ubuntu:22.04"})
     """
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        timeout: Optional[int] = None,
-    ):
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: int | None = None,
+    ) -> None:
         """Initialize the Lunette client.
 
-        If no parameters are provided, loads configuration from ~/.lunette/config.json.
-        Explicit parameters override values from the config file.
-
         Args:
-            base_url: Base URL for the Lunette API (e.g., "https://api.lunette.dev")
             api_key: API key for authentication
-            timeout: Request timeout in seconds (default: 30)
+            base_url: Base URL for the Lunette API
+            timeout: Request timeout in seconds
 
         Raises:
-            FileNotFoundError: If config file is needed but not found
-            ValueError: If config is invalid or missing required fields
+            ValueError: If no API key is found
         """
-        # Load from config file if needed
-        config_data = {}
+        config = self._load_config_file()
 
-        # Check for LUNETTE_HOME_DIR environment variable
-        lunette_home = os.environ.get("LUNETTE_HOME_DIR")
-        if lunette_home:
-            config_path = Path(lunette_home) / "config.json"
-        else:
-            config_path = Path.home() / ".lunette" / "config.json"
-
-        if not config_path.exists():
-            config_data = {}
-        else:
-            try:
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config_data = json.load(f)
-            except json.JSONDecodeError as e:
-                raise json.JSONDecodeError(
-                    f"Invalid JSON in configuration file {config_path}: {e.msg}",
-                    e.doc,
-                    e.pos,
-                )
-
-        # Use explicit params or fall back to config file
-        self.base_url = base_url or config_data.get(
-            "base_url", "https://app.fulcrumresearch.ai/api"
+        # priority: explicit args > env vars > config file > defaults
+        self.api_key = (
+            api_key or os.environ.get("LUNETTE_API_KEY") or config.get("api_key")
         )
-        self.api_key = api_key or config_data.get("api_key")
-        self.timeout = timeout or config_data.get("timeout", 200)
+        self.base_url = (
+            base_url
+            or os.environ.get("LUNETTE_BASE_URL")
+            or config.get("base_url", "https://app.fulcrumresearch.ai/api")
+        )
+        self.timeout = timeout or config.get("timeout", 200)
 
-        # Validate required fields
         if not self.api_key:
             raise ValueError(
-                "api_key is required: provide via LunetteClient(api_key=...) "
-                "or in ~/.lunette/config.json"
+                "No API key found. Either:\n"
+                "  - Set LUNETTE_API_KEY environment variable\n"
+                "  - Add api_key to ~/.lunette/config.json\n"
+                "  - Pass api_key to LunetteClient()"
             )
 
         self._client = httpx.AsyncClient(
@@ -151,6 +125,15 @@ class LunetteClient:
             timeout=self.timeout,
             headers={"X-API-Key": self.api_key},
         )
+
+    @staticmethod
+    def _load_config_file() -> dict:
+        """Load config from ~/.lunette/config.json (or $LUNETTE_HOME/config.json)."""
+        home = os.environ.get("LUNETTE_HOME", Path.home() / ".lunette")
+        config_path = Path(home) / "config.json"
+        if not config_path.exists():
+            return {}
+        return json.loads(config_path.read_text())
 
     async def create_sandbox(
         self,
