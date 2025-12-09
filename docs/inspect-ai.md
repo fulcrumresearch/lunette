@@ -17,13 +17,13 @@ That's it. Your trajectories are now captured and uploaded to Lunette.
 Here's a minimal Inspect task configured for Lunette:
 
 ```python
---8<-- "examples/inspect_task.py"
+--8<-- "examples/environment/inspect_task.py"
 ```
 
 Run it:
 
 ```bash
-inspect eval examples/inspect_task.py --sandbox lunette --model openai/gpt-4o-mini
+inspect eval examples/environment/inspect_task.py --sandbox lunette --model anthropic/claude-haiku-4-5
 ```
 
 ## What gets captured

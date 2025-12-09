@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Trace a custom Anthropic agent loop with Lunette.
+Trace Anthropic API calls and upload transcripts to Lunette.
 
 Run with:
-    uv run python examples/custom_anthropic.py
+    uv run python examples/transcript/anthropic.py
 
 Requires ANTHROPIC_API_KEY and LUNETTE_API_KEY in environment or .env file.
 """

@@ -4,29 +4,53 @@
 
 When your AI agent runs—whether it's solving coding tasks, answering questions, or using tools—Lunette records every step. You can then browse these trajectories, see where things went wrong, and launch *investigator agents* that analyze failures for you.
 
-## Two ways to use Lunette
+## Two capture modes
+
+Lunette can capture your agent's work in two ways:
 
 <div class="grid cards" markdown>
 
--   :material-flask: **[Using Inspect AI](inspect-ai.md)**
+-   :material-text-box-outline: **Transcript**
 
     ---
 
-    Already using Inspect AI for evals? Add one flag and your trajectories are captured automatically.
+    Captures the **conversation only**: messages, tool calls, and responses. Lightweight, works with any LLM code.
 
-    ```bash
-    inspect eval task.py --sandbox lunette
-    ```
+    Best for: Understanding what your agent said and did.
 
--   :material-code-braces: **[Custom Agent Loop](custom-agents.md)**
+-   :material-server: **Transcript + Environment**
 
     ---
 
-    Have your own agent code? Wrap it with the tracer to capture trajectories.
+    Captures conversation **plus a cloud sandbox**. The investigator can re-run commands and access files from the original environment.
+
+    Best for: Debugging agents that execute code or modify files.
+
+</div>
+
+## How to use each mode
+
+<div class="grid cards" markdown>
+
+-   :material-code-braces: **[Transcript: Custom Agents](custom-agents.md)**
+
+    ---
+
+    Wrap your LLM calls with the tracer:
 
     ```python
     async with tracer.trajectory(sample=1):
         response = await client.chat(...)
+    ```
+
+-   :material-flask: **[Environment: Inspect AI](inspect-ai.md)**
+
+    ---
+
+    Add one flag to run in a Lunette sandbox:
+
+    ```bash
+    inspect eval task.py --sandbox lunette
     ```
 
 </div>
@@ -37,7 +61,7 @@ Once your trajectories are captured:
 
 1. **Browse** them at [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai)
 2. **Filter** by score, task, model, or custom metadata
-3. **Investigate** failures with AI agents that read your traces and execute code in the original environment
+3. **Investigate** failures with AI agents that analyze your traces (and execute code in the environment, if captured)
 
 ## Installation
 

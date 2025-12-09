@@ -12,19 +12,19 @@ If you have your own agent code (not using Inspect AI), use `LunetteTracer` to c
 ## Example with OpenAI
 
 ```python
---8<-- "examples/custom_openai.py"
+--8<-- "examples/transcript/openai.py"
 ```
 
 Run it:
 
 ```bash
-uv run python examples/custom_openai.py
+uv run python examples/transcript/openai.py
 ```
 
 ## Example with Anthropic
 
 ```python
---8<-- "examples/custom_anthropic.py"
+--8<-- "examples/transcript/anthropic.py"
 ```
 
 ## Key concepts

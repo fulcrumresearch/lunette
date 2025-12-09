@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Trace a custom OpenAI agent loop with Lunette.
+Trace OpenAI API calls and upload transcripts to Lunette.
 
 Run with:
-    uv run python examples/custom_openai.py
+    uv run python examples/transcript/openai.py
 
 Requires OPENAI_API_KEY and LUNETTE_API_KEY in environment or .env file.
 """
