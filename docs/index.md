@@ -4,95 +4,57 @@
 
 When your AI agent runs—whether it's solving coding tasks, answering questions, or using tools—Lunette records every step. You can then browse these trajectories, see where things went wrong, and launch *investigator agents* that analyze failures for you.
 
-## Two capture modes
+## Quick Start
 
-Lunette can capture your agent's work in two ways:
-
-<div class="grid cards" markdown>
-
--   :material-text-box-outline: **Transcript**
-
-    ---
-
-    Captures the **conversation only**: messages, tool calls, and responses. Lightweight, works with any LLM code.
-
-    Best for: Understanding what your agent said and did.
-
--   :material-server: **Transcript + Environment**
-
-    ---
-
-    Captures conversation **plus a cloud sandbox**. The investigator can re-run commands and access files from the original environment.
-
-    Best for: Debugging agents that execute code or modify files.
-
-</div>
-
-## How to use each mode
-
-<div class="grid cards" markdown>
-
--   :material-code-braces: **[Custom Agent Loop](custom-agents.md)**
-
-    ---
-
-    Wrap your LLM calls with the tracer. Supports both transcript-only and full environment capture.
-
-    ```python
-    async with tracer.trajectory(sample=1):
-        response = await client.chat(...)
-    ```
-
--   :material-flask: **[Inspect AI](inspect-ai.md)**
-
-    ---
-
-    Add one flag to run in a Lunette sandbox:
-
-    ```bash
-    inspect eval task.py --sandbox lunette
-    ```
-
-</div>
-
-## What happens next?
-
-Once your trajectories are captured:
-
-1. **Browse** them at [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai)
-2. **Filter** by score, task, model, or custom metadata
-3. **Investigate** failures with AI agents that analyze your traces (and execute code in the environment, if captured)
-
-## Installation
+The fastest path is with Inspect AI:
 
 ```bash
 pip install lunette-sdk
+inspect eval your_task.py --sandbox lunette
 ```
 
-Or with uv:
+Your trajectories are now being captured with full environment access.
 
-```bash
-uv add lunette-sdk
-```
+→ **[Getting Started Guide](getting-started.md)**
 
-## Configuration
+## How It Works
 
-Get your API key from [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai), then either:
+<div class="grid cards" markdown>
 
-**Option 1: Environment variable** (recommended for CI/containers)
-```bash
-export LUNETTE_API_KEY="your-api-key-here"
-```
+-   :material-record-circle: **Record**
 
-**Option 2: Config file** (convenient for local dev)
-```bash
-mkdir -p ~/.lunette
-echo '{"api_key": "your-api-key-here"}' > ~/.lunette/config.json
-```
+    ---
+
+    Capture trajectories as your agent runs. Choose between [transcript mode](recording/transcript.md) (conversation only) or [environment mode](recording/environment.md) (conversation + sandbox).
+
+-   :material-magnify: **Investigate**
+
+    ---
+
+    Launch AI investigators that analyze your trajectories. They can [read transcripts, search for patterns, and—with environment mode—execute commands](investigating/capabilities.md) in the original sandbox.
+
+-   :material-bug: **Find Issues**
+
+    ---
+
+    Investigators create structured issues with evidence, confidence scores, and message references. Find test mis-specifications, environment problems, and agent failures.
+
+</div>
+
+## Recording Modes
+
+Lunette can capture trajectories in two ways:
+
+| Mode | What's Captured | Investigation Power |
+|------|-----------------|---------------------|
+| **[Environment](recording/environment.md)** | Conversation + sandbox | Full (can execute commands, read files) |
+| **[Transcript](recording/transcript.md)** | Conversation only | Limited (transcript analysis only) |
+
+!!! tip "Use Environment Mode"
+    We strongly recommend environment mode whenever possible. Investigators are much more effective when they can access the original sandbox—they can verify agent claims, reproduce errors, and test hypotheses.
 
 ## Links
 
-- [Web App](https://app.fulcrumresearch.ai) — Browse trajectories and launch investigations
-- [Demo](https://demo.fulcrumresearch.ai/home) — Try out the platform
-- [GitHub](https://github.com/fulcrum-research/lunette) — Source code
-
+- **[Web App](https://app.fulcrumresearch.ai)** — Browse trajectories and launch investigations
+- **[Demo](https://demo.fulcrumresearch.ai)** — Try the platform
+- **[GitHub](https://github.com/fulcrum-research/lunette)** — Source code

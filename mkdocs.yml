@@ -65,9 +65,14 @@ plugins:
 
 nav:
   - Home: index.md
-  - Using Inspect AI: inspect-ai.md
-  - Custom Agent Loop: custom-agents.md
-  - Investigations: investigations.md
+  - Getting Started: getting-started.md
+  - Recording Trajectories:
+      - Overview: recording/index.md
+      - Transcript Mode: recording/transcript.md
+      - Environment Mode: recording/environment.md
+  - Investigating Trajectories:
+      - Overview: investigating/index.md
+      - Investigator Capabilities: investigating/capabilities.md
   - API Reference:
       - Overview: api/index.md
       - Client: api/client.md
