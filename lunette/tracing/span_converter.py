@@ -122,69 +122,124 @@ def _parse_content(raw_content: Any) -> str | list[Content]:
 def _extract_indexed_attributes(
     attributes: dict[str, Any], prefix: str
 ) -> list[dict[str, Any]]:
-    """Extract indexed attributes like gen_ai.prompt.0.role into a list of dicts."""
+    """Extract indexed attributes like gen_ai.prompt.0.role into a list of dicts.
+
+    Handles nested indexed attributes like:
+    - gen_ai.prompt.0.role -> items[0]["role"]
+    - gen_ai.prompt.0.tool_calls.0.name -> items[0]["tool_calls"][0]["name"]
+    """
+    # match top-level index and everything after
     pattern = re.compile(rf"^{re.escape(prefix)}\.(\d+)\.(.+)$")
     items: defaultdict[int, dict[str, Any]] = defaultdict(dict)
 
     for key, value in attributes.items():
         if match := pattern.match(key):
-            items[int(match[1])][match[2]] = value
+            idx = int(match[1])
+            rest = match[2]
 
-    return [items[i] for i in sorted(items)]
+            # check for nested indexed attributes like tool_calls.0.name
+            nested_match = re.match(r"^(tool_calls)\.(\d+)\.(.+)$", rest)
+            if nested_match:
+                nested_key, nested_idx, nested_attr = nested_match.groups()
+                nested_idx = int(nested_idx)
+
+                if nested_key not in items[idx]:
+                    items[idx][nested_key] = {}
+                if nested_idx not in items[idx][nested_key]:
+                    items[idx][nested_key][nested_idx] = {}
+                items[idx][nested_key][nested_idx][nested_attr] = value
+            else:
+                items[idx][rest] = value
+
+    # convert nested dicts of tool_calls to lists
+    result = []
+    for i in sorted(items):
+        item = dict(items[i])
+        if "tool_calls" in item and isinstance(item["tool_calls"], dict):
+            # convert {0: {...}, 1: {...}} to [{...}, {...}]
+            tc_dict = item["tool_calls"]
+            item["tool_calls"] = [tc_dict[j] for j in sorted(tc_dict)]
+        result.append(item)
+
+    return result
 
 
-def _parse_tool_calls(completion: dict[str, Any]) -> list[ToolCall] | None:
-    """Parse tool calls from a completion dict.
+def _parse_tool_calls(msg_attrs: dict[str, Any]) -> list[ToolCall] | None:
+    """Parse tool calls from a message attribute dict.
 
     Tool calls may be stored as:
-    - tool_calls: JSON string of array
+    - tool_calls: list of dicts with {name, arguments, id} (from nested OTel attributes)
+    - tool_calls: JSON string of array with {id, function: {name, arguments}}
     - function.name / function.arguments: single function call
     """
-    # check for tool_calls array (JSON encoded)
-    if "tool_calls" in completion:
+    if "tool_calls" not in msg_attrs:
+        # check for single function call (legacy format)
+        if "function.name" in msg_attrs:
+            args_str = msg_attrs.get("function.arguments", "{}")
+            try:
+                args = json.loads(args_str) if isinstance(args_str, str) else args_str
+            except json.JSONDecodeError:
+                args = {}
+
+            return [
+                ToolCall(
+                    id=msg_attrs.get("id", ""),
+                    function=msg_attrs["function.name"],
+                    arguments=args if isinstance(args, dict) else {},
+                )
+            ]
+        return None
+
+    tool_calls_data = msg_attrs["tool_calls"]
+
+    # handle JSON string format
+    if isinstance(tool_calls_data, str):
         try:
-            tool_calls_data = completion["tool_calls"]
-            if isinstance(tool_calls_data, str):
-                tool_calls_data = json.loads(tool_calls_data)
-
-            if not tool_calls_data:
-                return None
-
-            result = []
-            for tc in tool_calls_data:
-                if isinstance(tc, dict):
-                    func = tc.get("function", {})
-                    args = func.get("arguments", "{}")
-                    if isinstance(args, str):
-                        args = json.loads(args) if args else {}
-                    result.append(
-                        ToolCall(
-                            id=tc.get("id", ""),
-                            function=func.get("name", ""),
-                            arguments=args,
-                        )
-                    )
-            return result if result else None
-        except (json.JSONDecodeError, TypeError, KeyError):
-            pass
-
-    # check for single function call
-    if "function.name" in completion:
-        args_str = completion.get("function.arguments", "{}")
-        try:
-            args = json.loads(args_str) if isinstance(args_str, str) else args_str
+            tool_calls_data = json.loads(tool_calls_data)
         except json.JSONDecodeError:
-            args = {}
+            return None
 
-        return [
-            ToolCall(
-                id=completion.get("id", ""),
-                function=completion["function.name"],
-                arguments=args if isinstance(args, dict) else {},
+    if not tool_calls_data:
+        return None
+
+    result = []
+    for tc in tool_calls_data:
+        if not isinstance(tc, dict):
+            continue
+
+        # OTel nested format: {name, arguments, id} directly in the dict
+        if "name" in tc:
+            args = tc.get("arguments", "{}")
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args) if args else {}
+                except json.JSONDecodeError:
+                    args = {}
+            result.append(
+                ToolCall(
+                    id=tc.get("id", ""),
+                    function=tc["name"],
+                    arguments=args if isinstance(args, dict) else {},
+                )
             )
-        ]
+        # legacy format: {id, function: {name, arguments}}
+        elif "function" in tc:
+            func = tc.get("function", {})
+            args = func.get("arguments", "{}")
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args) if args else {}
+                except json.JSONDecodeError:
+                    args = {}
+            result.append(
+                ToolCall(
+                    id=tc.get("id", ""),
+                    function=func.get("name", ""),
+                    arguments=args if isinstance(args, dict) else {},
+                )
+            )
 
-    return None
+    return result if result else None
 
 
 def _extract_messages_from_span(
@@ -212,6 +267,14 @@ def _extract_messages_from_span(
     for prompt in prompts:
         role = prompt.get("role", "")
         content = _parse_content(prompt.get("content"))
+
+        # always track tool_calls from assistant messages for tool message lookups,
+        # even if we skip the message itself due to deduplication
+        if role == "assistant":
+            tool_calls = _parse_tool_calls(prompt)
+            if tool_calls:
+                for tc in tool_calls:
+                    tool_calls_by_id[tc.id] = tc
 
         # skip if we've seen this exact message before
         msg_hash = _content_hash(role, content)
@@ -242,13 +305,8 @@ def _extract_messages_from_span(
                 # if tool_call not found, we skip this message (shouldn't happen in well-formed traces)
 
             case "assistant":
-                # assistant messages in prompts are from previous turns
-                # parse tool calls if present
+                # tool_calls already extracted above for tracking
                 tool_calls = _parse_tool_calls(prompt)
-                if tool_calls:
-                    for tc in tool_calls:
-                        tool_calls_by_id[tc.id] = tc
-
                 messages.append(
                     AssistantMessage(
                         position=position, content=content, tool_calls=tool_calls
