@@ -13,7 +13,6 @@ from inspect_ai.model import (
     ChatMessageUser,
     ChatMessageTool,
 )
-from inspect_ai.scorer import Score
 
 from lunette.models.messages import (
     AssistantMessage,
@@ -43,6 +42,26 @@ def _sanitize_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
+def _normalize_score_value(value: Any) -> float:
+    """Convert a score value (C/P/I, string, number) to a float."""
+    match value:
+        case "C":
+            return 1.0
+        case "P":
+            return 0.5
+        case "I":
+            return 0.0
+        case str():
+            try:
+                return float(value)
+            except ValueError:
+                raise ValueError(f"Invalid score value string '{value}'")
+        case int() | float() | bool():
+            return float(value)
+        case _:
+            raise ValueError(f"Cannot normalize score value: {value}")
+
+
 class ScalarScore(BaseModel):
     """A scalar score for a trajectory."""
 
@@ -57,49 +76,6 @@ class ScalarScore(BaseModel):
 
     metadata: dict[str, Any] | None = None
     """Additional metadata about the score."""
-
-    @classmethod
-    def from_inspect(cls, score: Score) -> ScalarScore:
-        """Convert an Inspect AI `Score` to a `ScalarScore`."""
-
-
-        # Handle dict values (e.g., {'main_task_success': 'I'})
-        value = score.value
-        if isinstance(value, dict):
-            # Try to extract a single scalar value from the dict
-            if len(value) == 1:
-                value = list(value.values())[0]
-            else:
-                raise ValueError(f"Score value is a dict with multiple keys: {value}")
-        else:
-
-            try:
-                value: str | int | float | bool = score._as_scalar()
-            except ValueError:
-                raise ValueError("Score is not a scalar")
-
-
-        match value:
-            case "C":
-                value = 1.0
-            case "P":
-                value = 0.5
-            case "I":
-                value = 0.0
-            case str():
-                try:
-                    value = float(value)
-                except ValueError:
-                    raise ValueError(f"Invalid score value string '{value}'")
-            case int() | float() | bool():
-                value = float(value)
-
-        return cls(
-            value=value,
-            answer=score.answer,
-            explanation=score.explanation,
-            metadata=score.metadata,
-        )
 
 
 class Trajectory(BaseModel):
@@ -151,29 +127,29 @@ class Trajectory(BaseModel):
         if sample.error:
             raise ValueError(f"Sample {sample.id} has an error: {sample.error.message}")
 
-        # start by extracting scores, so we fail fast if they aren't scalars
+        # Extract scores - handle both scalar values and dict values (e.g. control_arena)
         scores: dict[str, ScalarScore] | None = None
         if sample.scores is not None:
             scores = {}
             for name, score in sample.scores.items():
-                # Check if score.value is a dict with multiple keys
-                if isinstance(score.value, dict) and len(score.value) > 1:
-                    # Split multi-key dict into separate scalar scores
+                if isinstance(score.value, dict):
+                    # Dict score - split into separate entries with composite names
                     for subkey, subvalue in score.value.items():
-                        # Create a temporary Score object for each sub-score
-                        from inspect_ai.scorer import Score as InspectScore
-                        subscore = InspectScore(
-                            value=subvalue,
+                        composite_name = f"{name}/{subkey}" if name else subkey
+                        scores[composite_name] = ScalarScore(
+                            value=_normalize_score_value(subvalue),
                             answer=score.answer,
                             explanation=score.explanation,
                             metadata=score.metadata,
                         )
-                        # Use a composite name like "scorer_name/subkey"
-                        composite_name = f"{name}/{subkey}" if name else subkey
-                        scores[composite_name] = ScalarScore.from_inspect(subscore)
                 else:
-                    # Single value score - process normally
-                    scores[name] = ScalarScore.from_inspect(score)
+                    # Scalar score
+                    scores[name] = ScalarScore(
+                        value=_normalize_score_value(score.value),
+                        answer=score.answer,
+                        explanation=score.explanation,
+                        metadata=score.metadata,
+                    )
 
         # convert InspectAI `ChatMessage`s to our `Message`s
         messages: list[Message] = []
