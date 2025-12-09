@@ -4,8 +4,6 @@ Lunette is a platform for understanding agents and evals through investigator ag
 
 Lunette is currently in beta, and quickly getting many improvements. Feel free to suggest things!
 
-![lunette flow](lunette_flow.png)
-
 ## Installation
 
 ```bash
@@ -18,23 +16,31 @@ Or with uv:
 uv add lunette-sdk
 ```
 
-## Quick Start
+## Configuration
 
-### 1. Get Your API Key
+### 1\. Get Your API Key
 
 Visit [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai) to sign up and get your API key.
 
-### 2. Configure Lunette
+### 2\. Configure Client
 
 Create a configuration file at `~/.lunette/config.json`:
 
 ```json
 {
-  "api_key": "your-api-key-here"
+  "api_key": "your-api-key-here",
+  "base_url": "https://app.fulcrumresearch.ai/api",
+  "timeout": 200
 }
 ```
 
-### 3. Run Your Evaluation
+Alternatively, you can provide these details via environment variables or pass them directly to the `LunetteClient` constructor.
+
+## Running with Inspect AI
+
+Lunette integrates seamlessly with the [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) framework. By changing just one line in your task definition, you can offload execution from your local Docker daemon to Lunette's cloud infrastructure.
+
+### Quick Start
 
 Run your Inspect AI evaluation with the Lunette sandbox:
 
@@ -42,21 +48,160 @@ Run your Inspect AI evaluation with the Lunette sandbox:
 inspect eval your_task.py --sandbox lunette
 ```
 
-That's it! Your trajectories will automatically be logged to the Fulcrum platform, where you can:
-- Browse and visualize agent trajectories
-- Analyze performance across multiple runs
+Your trajectories will automatically be logged to the Fulcrum platform, where you can browse visualizations, analyze performance, and launch investigations.
 
-- Launch automated investigations to identify patterns and issues
+### Defining a Task
 
-You can also run almost all existing inspect sandboxes on lunette out of the box, including swebench!
+In your Inspect task definition, set the `sandbox` parameter to `"lunette"`.
 
+```python
+from inspect_ai import Task, task
+from inspect_ai.dataset import Sample
+from inspect_ai.solver import system_message
+
+@task
+def my_agent_task():
+    return Task(
+        dataset=[Sample(input="List files", target=".")],
+        plan=[system_message("Run 'ls -la'")],
+        # Tell Inspect to use Lunette instead of local Docker
+        sandbox="lunette" 
+    )
 ```
-uv run inspect eval inspect_evals/swe_bench_verified_mini --model openai/gpt-5-nano --limit 1 --sandbox lunette -T sandbox_config_template_file=examples/swebench.yaml -T sandbox_type=lunette -T build_docker_images=False
+
+### Configuring the Environment
+
+Lunette uses standard Docker Compose files to define the sandbox environment. Ensure your `compose.yaml` defines the service you want to run:
+
+```yaml
+services:
+  default:
+    image: python:3.11-slim
+    command: tail -f /dev/null  # Keep container alive
+    working_dir: /app
 ```
 
-### Programmatic API
+### Running Standard Benchmarks (e.g., SWE-bench)
 
-You can also use Lunette programmatically to upload trajectories:
+You can run almost all existing inspect sandboxes on Lunette out of the box. Here is an example running SWE-bench Verified Mini:
+
+```bash
+uv run inspect eval inspect_evals/swe_bench_verified_mini \
+  --model openai/gpt-5-nano \
+  --limit 1 \
+  --sandbox lunette \
+  -T sandbox_config_template_file=examples/swebench.yaml \
+  -T sandbox_type=lunette \
+  -T build_docker_images=False
+```
+
+## Running with Python SDK (No Inspect)
+
+If you are not using Inspect AI, you can use the `LunetteClient` to manage sandboxes directly. This is ideal for custom agent loops, CI/CD pipelines, or bespoke evaluation harnesses.
+
+### Initialization
+
+Use `LunetteClient` as an async context manager. It automatically loads credentials from `~/.lunette/config.json`.
+
+```python
+import asyncio
+from lunette import LunetteClient
+
+async def main():
+    async with LunetteClient() as client:
+        # Your code here
+        pass
+
+asyncio.run(main())
+```
+
+### Creating a Sandbox
+
+You define a sandbox using a **Service Dictionary** (similar to Docker Compose). You can either pull an existing image or build one from a local directory.
+
+**Option A: Pull an Image**
+
+```python
+service_config = {
+    "image": "python:3.11-slim",
+    "command": "tail -f /dev/null",  # Important: Keep the container running!
+    "working_dir": "/workspace"
+}
+
+sandbox = await client.create_sandbox(service_config)
+print(f"Sandbox created with ID: {sandbox.sandbox_id}")
+```
+
+**Option B: Build from Source**
+
+```python
+service_config = {
+    "build": {
+        "context": "./my-agent-code"  # Path to local directory containing Dockerfile
+    },
+    "command": "python agent.py"
+}
+
+sandbox = await client.create_sandbox(service_config)
+```
+
+*Note: Lunette respects your `.dockerignore` file when uploading build contexts.*
+
+### Executing Commands
+
+Use `aexec` to run shell commands inside the sandbox.
+
+```python
+result = await sandbox.aexec("echo 'Hello World'")
+
+if result.success:
+    print(f"Stdout: {result.stdout}")
+else:
+    print(f"Error ({result.exit_code}): {result.stderr}")
+```
+
+### File I/O
+
+Upload and download files easily between your local machine and the remote sandbox.
+
+```python
+# Upload a local script
+await sandbox.aupload(local_path="./local_script.py", remote_path="/workspace/script.py")
+
+# Download results
+await sandbox.adownload(remote_path="/workspace/results.json", local_path="./results.json")
+```
+
+### Cleanup
+
+Explicitly stop sandboxes when done to free up resources.
+
+```python
+await sandbox.destroy()
+```
+
+## Service Specification Reference
+
+The `service` dictionary passed to `create_sandbox` (and used in `compose.yaml` for Inspect) supports a subset of the [Docker Compose V2 specification](https://docs.docker.com/compose/compose-file/).
+
+| Field | Description | Example |
+| :--- | :--- | :--- |
+| **`image`** | Docker image to pull. | `"ubuntu:22.04"` |
+| **`build`** | Build context path or dict. | `"."` or `{"context": "."}` |
+| **`command`** | Startup command. | `"python app.py"` |
+| **`working_dir`** | Directory to execute in. | `"/app"` |
+| **`environment`** | Env vars (dict or list). | `{"API_KEY": "..."}` |
+| **`ports`** | Port mapping list. | `["8080:80"]` |
+| **`volumes`** | Volume mounts. | `["/host:/container"]` |
+| **`resources`** | Resource limits. | `{"mem_limit": "512m"}` |
+
+*Note: Orchestration fields like `depends_on`, `links`, and `deploy` are currently ignored as Lunette runs single-service sandboxes.*
+
+## Data Management & API
+
+### Programmatic API: Uploading Results
+
+You can use Lunette to upload evaluation trajectories programmatically:
 
 ```python
 from lunette import LunetteClient, Run, Trajectory
@@ -71,7 +216,7 @@ async with LunetteClient() as client:
     await client.save_run(run)
 ```
 
-We are currently adding support for various trajectory formats. The core `Trajectory` type signature is:
+The core `Trajectory` type signature is:
 
 ```python
 class Trajectory(BaseModel):
@@ -82,43 +227,35 @@ class Trajectory(BaseModel):
     solution: str | None  # Optional solution/patch
 ```
 
-See the full data model in [lunette/models/](https://github.com/fulcrum-research/lunette/tree/main/lunette/lunette/models)
-
-We will document this more and improve the non-inspect SDK soon.
+See the full data model in [lunette/models/](https://github.com/fulcrum-research/lunette/tree/main/lunette/lunette/models).
 
 ### Uploading Inspect Logs
 
-If you already have an Inspect `.eval` (or JSON) log from `inspect eval --log`, you can upload it directly with the Lunette CLI:
+If you have an Inspect `.eval` (or JSON) log from `inspect eval --log`, you can upload it directly with the CLI:
 
-```
+```bash
 lunette upload logs/2025-11-04T11-10-16-05-00_swe-bench.eval
 ```
 
-The command extracts trajectories from the log, creates a run with the task/model metadata, and saves everything to Fulcrum. Use `--task` or `--model` if you need to override what was stored in the log metadata.
-Attachments referenced via `attachment://` URIs (images, files, etc.) are automatically resolved and embedded before upload.
+The command extracts trajectories, creates a run with metadata, and saves everything to Fulcrum. Attachments referenced via `attachment://` URIs are automatically resolved and embedded.
 
 ### Converting from Inspect AI
 
-Lunette provides utilities to convert Inspect AI `EvalSample` objects to the standard `Trajectory` format:
+Utilities are provided to convert Inspect AI `EvalSample` objects to the standard `Trajectory` format:
 
 ```python
 from lunette import Trajectory
-
 trajectory = Trajectory.from_inspect(run_id="my-run", sample=eval_sample)
 ```
 
 ## Investigations
 
-Users provide Lunette with investigation specs for agents or evals they want to understand. Lunette then launches investigator agents that operate in parallel. For each trajectory, an investigator agent reads the agent trace, modifies and runs commands in the eval environment to test hypotheses, and writes findings. Validator agents then critique these findings and filter for high-quality results. At the end, users can explore investigation results in the Fulcrum frontend and chat with an agent to learn more.
+Users provide Lunette with investigation specs for agents or evals they want to understand. Lunette launches investigator agents that operate in parallel to read traces, execute code in the eval environment, and surface issues.
 
-To launch an investigation, you can use the web UI or define an investigation plan in YAML. See [examples/task_underspecification.yaml](examples/task_underspecification.yaml) for a complete example that analyzes failed trajectories for task underspecification issues.
-
-To run the example:
+To launch an investigation, use the web UI or define a plan in YAML (see [examples/task\_underspecification.yaml](https://www.google.com/search?q=examples/task_underspecification.yaml)):
 
 ```bash
 lunette investigate examples/task_underspecification.yaml
 ```
 
 You can optionally pass `--limit N` to investigate only the first N matching trajectories.
-
-Issues will start streaming in and you can see your investigations as they go.
