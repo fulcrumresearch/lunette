@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """
-Simple end-to-end test script for the tracing module.
+End-to-end test script for Anthropic tracing.
 
 Run with:
-    uv run python examples/test_tracing_e2e.py
+    uv run python tests/test_tracing_anthropic_e2e.py
 
-Expects OPENAI_API_KEY in .env file or environment.
+Expects ANTHROPIC_API_KEY in .env file or environment.
 
-This makes real OpenAI calls and captures them as trajectories,
+This makes real Anthropic calls and captures them as trajectories,
 but skips the upload to the Lunette server.
 """
 
 import asyncio
 import json
 
+from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
-from openai import AsyncOpenAI
 
+from lunette.models.messages import Image
 from lunette.models.run import Run
 from lunette.tracing import LunetteTracer
-
 
 load_dotenv()
 
@@ -28,25 +28,26 @@ TEST_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP
 
 
 async def main():
-    client = AsyncOpenAI()
-    tracer = LunetteTracer(task="test-math", model="gpt-5-nano")
+    client = AsyncAnthropic()
+    tracer = LunetteTracer(task="test-anthropic", model="claude-haiku-4-5")
 
     print(f"Run ID: {tracer.run_id}\n")
 
     # trajectory 1: simple question
     print("=" * 50)
-    print("Trajectory 1: Simple math question")
+    print("Trajectory 1: Simple question")
     print("=" * 50)
 
     async with tracer.trajectory(sample=1):
-        response = await client.chat.completions.create(
-            model="gpt-5-nano",
+        response = await client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=256,
+            system="You are a helpful assistant.",
             messages=[
-                {"role": "system", "content": "You are a helpful math tutor."},
                 {"role": "user", "content": "What is 2 + 2?"},
             ],
         )
-        print(f"Response: {response.choices[0].message.content}\n")
+        print(f"Response: {response.content[0].text}\n")
 
     # trajectory 2: multi-turn conversation
     print("=" * 50)
@@ -56,38 +57,38 @@ async def main():
     async with tracer.trajectory(sample=2):
         # first turn
         messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "What's the capital of France?"},
         ]
-        response1 = await client.chat.completions.create(
-            model="gpt-5-nano",
+        response1 = await client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=256,
+            system="You are a helpful assistant.",
             messages=messages,
         )
-        print(f"Turn 1: {response1.choices[0].message.content}")
+        assistant_text = response1.content[0].text
+        print(f"Turn 1: {assistant_text}")
 
         # second turn
-        messages.append(
-            {"role": "assistant", "content": response1.choices[0].message.content}
-        )
+        messages.append({"role": "assistant", "content": assistant_text})
         messages.append({"role": "user", "content": "What's its population?"})
 
-        response2 = await client.chat.completions.create(
-            model="gpt-5-nano",
+        response2 = await client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=256,
+            system="You are a helpful assistant.",
             messages=messages,
         )
-        print(f"Turn 2: {response2.choices[0].message.content}\n")
+        print(f"Turn 2: {response2.content[0].text}\n")
 
     # trajectory 3: image input (multimodal)
-    # NOTE: The OpenAI OTel instrumentation does NOT capture multimodal content.
-    # The API call works, but the image content is not recorded in the span.
-    # This is a known limitation of opentelemetry-instrumentation-openai.
     print("=" * 50)
     print("Trajectory 3: Image input (multimodal)")
     print("=" * 50)
 
     async with tracer.trajectory(sample=3):
-        response = await client.chat.completions.create(
-            model="gpt-4o-mini",  # need a vision-capable model
+        response = await client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=50,
             messages=[
                 {
                     "role": "user",
@@ -97,27 +98,31 @@ async def main():
                             "text": "What color is this image? Reply in one word.",
                         },
                         {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{TEST_IMAGE_BASE64}",
-                                "detail": "low",
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": TEST_IMAGE_BASE64,
                             },
                         },
                     ],
                 }
             ],
-            max_tokens=50,
         )
-        print(f"Response: {response.choices[0].message.content}")
+        print(f"Response: {response.content[0].text}\n")
 
-    # check what was captured (OpenAI instrumentation doesn't capture multimodal content)
+    # verify image was captured
     image_traj = tracer._trajectories[-1]
     user_msg = image_traj.messages[0]
-    print(f"Content type captured: {type(user_msg.content).__name__}")
-    print(f"Content: {repr(user_msg.content)[:100]}")
-    print(
-        "⚠ OpenAI instrumentation does not capture multimodal content (known limitation)\n"
+    assert isinstance(user_msg.content, list), (
+        "Expected list content for multimodal message"
     )
+    content_types = [type(c).__name__ for c in user_msg.content]
+    print(f"Captured content types: {content_types}")
+    assert any(isinstance(c, Image) for c in user_msg.content), (
+        "Expected Image in content"
+    )
+    print("✓ Image content captured correctly!\n")
 
     # print captured trajectories (without uploading)
     print("=" * 50)
@@ -155,7 +160,7 @@ async def main():
         + "\n..."
     )
 
-    print("\n✓ Tracing works! (skipped actual upload)")
+    print("\n✓ Anthropic tracing works! (skipped actual upload)")
 
 
 if __name__ == "__main__":
