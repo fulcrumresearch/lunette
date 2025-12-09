@@ -312,7 +312,7 @@ def test_convert_deduplicates_prompts():
 
 
 def test_convert_with_tool_calls():
-    """Converts tool call and tool result messages correctly."""
+    """Converts tool call and tool result messages correctly (OpenAI format)."""
     from lunette.models.messages import ToolMessage
 
     # first span: user asks, assistant responds with tool call
@@ -331,7 +331,7 @@ def test_convert_with_tool_calls():
     span1.attributes = span1_attrs
     span1.start_time = 100
 
-    # second span: includes previous messages + tool result
+    # second span: includes previous messages + tool result (OpenAI format)
     span2_attrs = {
         "gen_ai.prompt.0.role": "system",
         "gen_ai.prompt.0.content": "You are helpful",
@@ -372,6 +372,79 @@ def test_convert_with_tool_calls():
     assert isinstance(messages[3], ToolMessage)
     assert messages[3].content == "56"
     assert messages[3].tool_call.id == "call_123"
+    assert messages[3].tool_call.function == "multiply"
+
+    assert isinstance(messages[4], AssistantMessage)
+    assert messages[4].content == "7 times 8 is 56."
+
+
+def test_convert_with_tool_calls_anthropic():
+    """Converts tool call and tool result messages correctly (Anthropic format).
+
+    Anthropic has two differences from OpenAI:
+    1. Assistant messages with tool calls include JSON-serialized content
+    2. Tool results come as user messages with JSON array content
+    """
+    from lunette.models.messages import ToolMessage
+
+    # first span: user asks, assistant responds with tool call
+    span1_attrs = {
+        "gen_ai.prompt.0.role": "system",
+        "gen_ai.prompt.0.content": "You are helpful",
+        "gen_ai.prompt.1.role": "user",
+        "gen_ai.prompt.1.content": "What is 7 times 8?",
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.tool_calls.0.name": "multiply",
+        "gen_ai.completion.0.tool_calls.0.arguments": '{"a": 7, "b": 8}',
+        "gen_ai.completion.0.tool_calls.0.id": "toolu_123",
+    }
+    span1 = MagicMock()
+    span1.attributes = span1_attrs
+    span1.start_time = 100
+
+    # second span: includes previous messages + tool result (Anthropic format)
+    # note: assistant content is JSON-serialized tool_use blocks
+    # note: tool result comes as role=user with JSON content
+    span2_attrs = {
+        "gen_ai.prompt.0.role": "system",
+        "gen_ai.prompt.0.content": "You are helpful",
+        "gen_ai.prompt.1.role": "user",
+        "gen_ai.prompt.1.content": "What is 7 times 8?",
+        "gen_ai.prompt.2.role": "assistant",
+        "gen_ai.prompt.2.content": '[{"id": "toolu_123", "input": {"a": 7, "b": 8}, "name": "multiply", "type": "tool_use"}]',
+        "gen_ai.prompt.2.tool_calls.0.name": "multiply",
+        "gen_ai.prompt.2.tool_calls.0.arguments": '{"a": 7, "b": 8}',
+        "gen_ai.prompt.2.tool_calls.0.id": "toolu_123",
+        "gen_ai.prompt.3.role": "user",  # Anthropic sends tool results as user messages
+        "gen_ai.prompt.3.content": '[{"type": "tool_result", "tool_use_id": "toolu_123", "content": "56"}]',
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.content": "7 times 8 is 56.",
+    }
+    span2 = MagicMock()
+    span2.attributes = span2_attrs
+    span2.start_time = 200
+
+    messages = convert_spans_to_messages([span1, span2])
+
+    # should be: system, user, assistant (with tool call), tool, assistant (final)
+    assert len(messages) == 5
+
+    assert isinstance(messages[0], SystemMessage)
+    assert messages[0].content == "You are helpful"
+
+    assert isinstance(messages[1], UserMessage)
+    assert messages[1].content == "What is 7 times 8?"
+
+    assert isinstance(messages[2], AssistantMessage)
+    assert messages[2].content == ""  # JSON content should be ignored
+    assert messages[2].tool_calls is not None
+    assert len(messages[2].tool_calls) == 1
+    assert messages[2].tool_calls[0].function == "multiply"
+    assert messages[2].tool_calls[0].id == "toolu_123"
+
+    assert isinstance(messages[3], ToolMessage)  # should be TOOL, not USER
+    assert messages[3].content == "56"
+    assert messages[3].tool_call.id == "toolu_123"
     assert messages[3].tool_call.function == "multiply"
 
     assert isinstance(messages[4], AssistantMessage)

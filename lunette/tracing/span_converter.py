@@ -31,14 +31,78 @@ if TYPE_CHECKING:
     from opentelemetry.sdk.trace import ReadableSpan
 
 
-def _content_hash(role: str, content: str | list[Content]) -> str:
-    """Create a hash of message content for deduplication."""
+def _content_hash(
+    role: str, content: str | list[Content], tool_calls: list[ToolCall] | None = None
+) -> str:
+    """Create a hash of message content for deduplication.
+
+    For assistant messages with tool_calls, include the tool call IDs in the hash
+    to properly deduplicate messages that may have different content representations
+    (empty string vs JSON serialization of tool blocks).
+    """
     if isinstance(content, list):
-        # for multi-part content, hash the JSON representation
         content_str = json.dumps([c.model_dump() for c in content], sort_keys=True)
     else:
         content_str = content
+
+    # include tool_calls in hash for assistant messages
+    if tool_calls:
+        tc_ids = sorted(tc.id for tc in tool_calls)
+        return hashlib.md5(f"{role}:{content_str}:{tc_ids}".encode()).hexdigest()
+
     return hashlib.md5(f"{role}:{content_str}".encode()).hexdigest()
+
+
+def _parse_tool_results(content: str) -> list[dict[str, Any]] | None:
+    """Parse tool_result blocks from Anthropic-style user messages.
+
+    Anthropic tool results are sent as user messages with JSON array content:
+    [{"type": "tool_result", "tool_use_id": "...", "content": "..."}]
+
+    Returns list of parsed tool results, or None if content isn't tool results.
+    """
+    if not content or not content.strip().startswith("["):
+        return None
+
+    try:
+        parsed = json.loads(content)
+        if not isinstance(parsed, list):
+            return None
+
+        # check if all items are tool_result blocks
+        tool_results = []
+        for item in parsed:
+            if not isinstance(item, dict):
+                return None
+            if item.get("type") != "tool_result":
+                return None
+            tool_results.append(item)
+
+        return tool_results if tool_results else None
+    except json.JSONDecodeError:
+        return None
+
+
+def _is_tool_use_json(content: str) -> bool:
+    """Check if content is a JSON array of tool_use blocks (Anthropic format).
+
+    When Anthropic assistant messages with tool calls are included in prompts,
+    the content is serialized as JSON: [{"type": "tool_use", "id": "...", ...}]
+    We should ignore this content since we have the proper tool_calls attributes.
+    """
+    if not content or not content.strip().startswith("["):
+        return False
+
+    try:
+        parsed = json.loads(content)
+        if not isinstance(parsed, list) or not parsed:
+            return False
+
+        # check if first item looks like a tool_use block
+        first = parsed[0]
+        return isinstance(first, dict) and first.get("type") == "tool_use"
+    except json.JSONDecodeError:
+        return False
 
 
 def _parse_content(raw_content: Any) -> str | list[Content]:
@@ -266,18 +330,34 @@ def _extract_messages_from_span(
     prompts = _extract_indexed_attributes(attributes, "gen_ai.prompt")
     for prompt in prompts:
         role = prompt.get("role", "")
-        content = _parse_content(prompt.get("content"))
+        raw_content = prompt.get("content", "")
 
         # always track tool_calls from assistant messages for tool message lookups,
         # even if we skip the message itself due to deduplication
+        tool_calls = None
         if role == "assistant":
             tool_calls = _parse_tool_calls(prompt)
             if tool_calls:
                 for tc in tool_calls:
                     tool_calls_by_id[tc.id] = tc
 
-        # skip if we've seen this exact message before
-        msg_hash = _content_hash(role, content)
+        # for assistant messages with tool_calls, check if raw content is tool_use JSON
+        # (Anthropic serializes tool blocks as JSON content - we should ignore it)
+        # must check BEFORE _parse_content which mangles the JSON
+        if (
+            role == "assistant"
+            and tool_calls
+            and isinstance(raw_content, str)
+            and _is_tool_use_json(raw_content)
+        ):
+            content = ""
+        else:
+            content = _parse_content(raw_content)
+
+        # skip if we've seen this exact message before (include tool_calls in hash)
+        msg_hash = _content_hash(
+            role, content, tool_calls if role == "assistant" else None
+        )
         if msg_hash in seen_hashes:
             continue
         seen_hashes.add(msg_hash)
@@ -288,11 +368,32 @@ def _extract_messages_from_span(
                 position += 1
 
             case "user":
-                messages.append(UserMessage(position=position, content=content))
-                position += 1
+                # check if this is an Anthropic-style tool result message
+                # (must check raw_content since _parse_content mangles JSON)
+                tool_results = None
+                if isinstance(raw_content, str):
+                    tool_results = _parse_tool_results(raw_content)
+
+                if tool_results:
+                    # convert to TOOL messages
+                    for tr in tool_results:
+                        tool_call_id = tr.get("tool_use_id", "")
+                        tool_call = tool_calls_by_id.get(tool_call_id)
+                        if tool_call:
+                            messages.append(
+                                ToolMessage(
+                                    position=position,
+                                    content=str(tr.get("content", "")),
+                                    tool_call=tool_call,
+                                )
+                            )
+                            position += 1
+                else:
+                    messages.append(UserMessage(position=position, content=content))
+                    position += 1
 
             case "tool":
-                # tool messages reference a previous tool call
+                # tool messages reference a previous tool call (OpenAI format)
                 tool_call_id = prompt.get("tool_call_id", "")
                 tool_call = tool_calls_by_id.get(tool_call_id)
                 if tool_call:
@@ -302,11 +403,8 @@ def _extract_messages_from_span(
                         )
                     )
                     position += 1
-                # if tool_call not found, we skip this message (shouldn't happen in well-formed traces)
 
             case "assistant":
-                # tool_calls already extracted above for tracking
-                tool_calls = _parse_tool_calls(prompt)
                 messages.append(
                     AssistantMessage(
                         position=position, content=content, tool_calls=tool_calls
@@ -320,16 +418,16 @@ def _extract_messages_from_span(
         role = completion.get("role", "assistant")
         content = _parse_content(completion.get("content"))
 
-        # completions are always new, but we still hash them to prevent re-adding if
-        # they appear in the next span's prompts
-        msg_hash = _content_hash(role, content)
-        seen_hashes.add(msg_hash)
-
         # parse tool calls
         tool_calls = _parse_tool_calls(completion)
         if tool_calls:
             for tc in tool_calls:
                 tool_calls_by_id[tc.id] = tc
+
+        # completions are always new, but we still hash them to prevent re-adding if
+        # they appear in the next span's prompts (include tool_calls for proper dedup)
+        msg_hash = _content_hash(role, content, tool_calls)
+        seen_hashes.add(msg_hash)
 
         messages.append(
             AssistantMessage(position=position, content=content, tool_calls=tool_calls)
