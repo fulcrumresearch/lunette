@@ -53,19 +53,6 @@ async def main():
 
     # --8<-- [start:upload]
     # upload trajectories to Lunette
-    print("\n--- Debug info ---")
-    print(f"Trajectories collected: {len(tracer._trajectories)}")
-    for i, t in enumerate(tracer._trajectories):
-        print(f"  [{i}] sample={t.sample}, messages={len(t.messages)}")
-
-    # manually create client to inspect config
-    from lunette import LunetteClient
-
-    client = LunetteClient()
-    print(f"Base URL: {client.base_url}")
-    print(f"API key set: {bool(client.api_key)}")
-    print(f"API key prefix: {client.api_key[:10]}..." if client.api_key else "None")
-
     result = await tracer.close()
     print(f"Uploaded run: {result['run_id']}")
     # --8<-- [end:upload]
