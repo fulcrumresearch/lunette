@@ -5,6 +5,7 @@ This section contains auto-generated API documentation from the Lunette source c
 ## Modules
 
 - [Client](client.md) — `LunetteClient` for interacting with the Fulcrum platform
+- [Sandbox](sandbox.md) — `Sandbox` for executing commands in cloud environments
 - [Models](models.md) — Data models for trajectories, runs, and messages
 
 ## Quick Links
@@ -12,6 +13,8 @@ This section contains auto-generated API documentation from the Lunette source c
 ### Core Classes
 
 - [`LunetteClient`](client.md#lunette.client.LunetteClient) — Main client for API interactions
+- [`Sandbox`](sandbox.md#lunette.sandbox.Sandbox) — Cloud sandbox for command execution
+- [`ExecResult`](sandbox.md#lunette.sandbox.ExecResult) — Result from sandbox command execution
 - [`Trajectory`](models.md#lunette.models.trajectory.Trajectory) — Agent execution trace
 - [`Run`](models.md#lunette.models.run.Run) — Collection of trajectories from an evaluation
 - [`SystemMessage`](models.md#lunette.models.messages.SystemMessage) — System prompt message

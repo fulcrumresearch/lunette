@@ -76,5 +76,6 @@ nav:
   - API Reference:
       - Overview: api/index.md
       - Client: api/client.md
+      - Sandbox: api/sandbox.md
       - Models: api/models.md
 
