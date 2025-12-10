@@ -20,7 +20,6 @@ from dotenv import load_dotenv
 
 from lunette import LunetteClient, LunetteTracer
 
-
 load_dotenv()
 
 

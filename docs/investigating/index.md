@@ -52,11 +52,8 @@ Each issue includes:
 
 ## Best Practices
 
-1. **Use environment mode** — Investigators are much more effective when they can access the sandbox
+1. **Use sandboxes** — Investigators are much more effective when they can access the environment
 2. **Filter before investigating** — Focus on failed or interesting trajectories
 3. **Review confidence scores** — Higher confidence means stronger evidence
 4. **Check the proof** — Investigators include reproduction steps when possible
 
-## Next Steps
-
-- [Investigator Capabilities](capabilities.md) — What tools investigators have access to

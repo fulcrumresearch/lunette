@@ -1,26 +1,13 @@
 site_name: Lunette
 site_description: Platform for understanding agents and evals through investigator agents
 site_url: https://docs.fulcrumresearch.ai
-repo_url: https://github.com/fulcrum-research/lunette
-repo_name: fulcrum-research/lunette
+repo_url: https://github.com/fulcrumresearch/lunette
+repo_name: fulcrumresearch/lunette
 
 theme:
   name: material
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: default
   features:
     - navigation.instant
     - navigation.tracking
@@ -32,6 +19,9 @@ theme:
     - content.code.copy
     - content.code.annotate
 
+extra_css:
+  - stylesheets/custom.css
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -40,6 +30,8 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
+      use_pygments: true
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       base_path: [., docs]
@@ -66,16 +58,13 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Recording Trajectories:
-      - Overview: recording/index.md
-      - Transcript Mode: recording/transcript.md
-      - Environment Mode: recording/environment.md
-  - Investigating Trajectories:
-      - Overview: investigating/index.md
-      - Investigator Capabilities: investigating/capabilities.md
+  - Tracing: tracing.md
+  - Running Agents: running-agents.md
+  - Investigating: investigating/index.md
   - API Reference:
       - Overview: api/index.md
       - Client: api/client.md
       - Tracer: api/tracer.md
       - Sandbox: api/sandbox.md
+      - Trajectory: api/trajectory.md
 

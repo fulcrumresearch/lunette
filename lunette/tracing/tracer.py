@@ -108,14 +108,16 @@ class LunetteTracer:
 
         Can be used as a context manager or decorator:
 
-            # context manager
-            async with tracer.trajectory(sample=1):
-                ...
+        ```python
+        # context manager
+        async with tracer.trajectory(sample=1):
+            ...
 
-            # decorator
-            @tracer.trajectory(sample=2)
-            async def solve_problem():
-                ...
+        # decorator
+        @tracer.trajectory(sample=2)
+        async def solve_problem():
+            ...
+        ```
 
         Args:
             sample: Sample identifier (e.g., problem number)

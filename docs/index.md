@@ -25,13 +25,13 @@ Your trajectories are now being captured with full environment access.
 
     ---
 
-    Capture trajectories as your agent runs. Choose between [transcript mode](recording/transcript.md) (conversation only) or [environment mode](recording/environment.md) (conversation + sandbox).
+    Capture trajectories as your agent runs. Use [tracing](tracing.md) for any LLM, or [run agents](running-agents.md) in Lunette sandboxes.
 
 -   :material-magnify: **Investigate**
 
     ---
 
-    Launch AI investigators that analyze your trajectories. They can [read transcripts, search for patterns, and—with environment mode—execute commands](investigating/capabilities.md) in the original sandbox.
+    Launch AI investigators that analyze your trajectories. They can read transcripts, search for patterns, and—with environment mode—execute commands in the original sandbox.
 
 -   :material-bug: **Find Issues**
 
@@ -41,17 +41,6 @@ Your trajectories are now being captured with full environment access.
 
 </div>
 
-## Recording Modes
-
-Lunette can capture trajectories in two ways:
-
-| Mode | What's Captured | Investigation Power |
-|------|-----------------|---------------------|
-| **[Environment](recording/environment.md)** | Conversation + sandbox | Full (can execute commands, read files) |
-| **[Transcript](recording/transcript.md)** | Conversation only | Limited (transcript analysis only) |
-
-!!! tip "Use Environment Mode"
-    We strongly recommend environment mode whenever possible. Investigators are much more effective when they can access the original sandbox—they can verify agent claims, reproduce errors, and test hypotheses.
 
 ## Links
 

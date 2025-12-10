@@ -1,11 +1,11 @@
 """Lunette SDK Sandbox operations."""
 
 import base64
-
-import httpx
 from typing import TYPE_CHECKING, Optional
 
+import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
+
 from lunette.logger import get_lunette_logger
 
 if TYPE_CHECKING:
@@ -43,15 +43,22 @@ class Sandbox:
     """Represents a running sandbox environment.
 
     Provides async operations for interacting with remote sandbox instances
-    managed by the Fulcrum backend service.
+    managed by the Lunette backend service.
 
     Example:
-        async with client.create_sandbox(image="ubuntu:22.04") as sandbox:
-            result = await sandbox.aexec("echo 'hello'")
-            print(result.stdout)
 
-            await sandbox.aupload("./script.py", "/workspace/script.py")
-            result = await sandbox.aexec("python /workspace/script.py")
+    ```python
+    async with LunetteClient() as client:
+        sandbox = await client.create_sandbox({"image": "python:3.11-slim"})
+
+        result = await sandbox.aexec("echo 'hello'")
+        print(result.stdout)
+
+        await sandbox.aupload("./script.py", "/workspace/script.py")
+        result = await sandbox.aexec("python /workspace/script.py")
+
+        await sandbox.destroy()
+    ```
     """
 
     def __init__(
@@ -72,28 +79,18 @@ class Sandbox:
         self.service = service
         self._destroyed = False
 
-    async def aexec(
-        self,
-        cmd: str,
-        timeout: Optional[int] = None,
-        cwd: Optional[str] = None,
-        env: Optional[dict[str, str]] = None,
-    ) -> ExecResult:
+    async def aexec(self, cmd: str) -> ExecResult:
         """Execute a command in the sandbox asynchronously.
 
         Args:
             cmd: Command to execute
-            timeout: Optional timeout in seconds (not yet supported by backend)
-            cwd: Working directory for command execution (not yet supported by backend)
-            env: Environment variables to set (not yet supported by backend)
 
         Returns:
             ExecResult with stdout, stderr, and exit code
 
         Raises:
             SandboxDestroyedError: If sandbox has been destroyed
-            SandboxTimeoutError: If command times out
-            SandboxError: For other sandbox-related errors
+            httpx.HTTPError: For HTTP-related errors
         """
         if self._destroyed:
             raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
@@ -145,7 +142,7 @@ class Sandbox:
         Raises:
             FileNotFoundError: If local file doesn't exist
             SandboxDestroyedError: If sandbox has been destroyed
-            SandboxError: For other sandbox-related errors
+            httpx.HTTPError: For HTTP-related errors
         """
         if self._destroyed:
             raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
@@ -193,7 +190,7 @@ class Sandbox:
         Raises:
             FileNotFoundError: If remote file doesn't exist
             SandboxDestroyedError: If sandbox has been destroyed
-            SandboxError: For other sandbox-related errors
+            httpx.HTTPError: For HTTP-related errors
         """
         if self._destroyed:
             raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")

@@ -16,7 +16,6 @@ from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
 from lunette.sandbox import Sandbox
 
-
 logger = get_lunette_logger(__name__)
 
 
@@ -72,15 +71,18 @@ class LunetteClient:
 
     Provides methods for creating and managing sandbox environments.
 
-    Configuration is loaded from (highest priority first):
-        1. Explicit arguments to __init__
-        2. Environment variables (LUNETTE_API_KEY, LUNETTE_BASE_URL)
-        3. Config file (~/.lunette/config.json)
+    Configuration is loaded from explicit arguments, environment variables,
+    or a config file (~/.lunette/config.json).
 
     Example:
-        # Uses env var LUNETTE_API_KEY or ~/.lunette/config.json
-        async with LunetteClient() as client:
-            sandbox = await client.create_sandbox({"image": "ubuntu:22.04"})
+
+    ```python
+    async with LunetteClient() as client:
+        sandbox = await client.create_sandbox({"image": "python:3.11-slim"})
+        result = await sandbox.aexec("python --version")
+        print(result.stdout)
+        await sandbox.destroy()
+    ```
     """
 
     def __init__(
