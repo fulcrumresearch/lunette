@@ -64,6 +64,10 @@ class AnalysisPlan(BaseModel):
         False,
         description="If true, disable sandbox access even if trajectories have sandbox_id",
     )
+    disable_claim_evaluator: bool = Field(
+        False,
+        description="If true, disable claim evaluator MCP server",
+    )
 
     def to_yaml(self) -> str:
         """Serialize plan to YAML string.
