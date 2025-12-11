@@ -8,7 +8,6 @@ from typing_extensions import override
 
 from inspect_ai.util._subprocess import ExecResult, subprocess
 
-from inspect_ai.log._samples import active_samples
 from inspect_ai.util._sandbox.environment import (
     SandboxEnvironment,
     SandboxEnvironmentConfigType,
@@ -228,6 +227,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         timeout_retry: bool = True,
         concurrency: bool = True,
     ) -> ExecResult[str]:
+        # TODO: we need to actually support some of these arguments at some point
         # ignoring a bunch of shit
 
         from inspect_ai.solver._task_state import sample_state
@@ -259,10 +259,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
 
         logger.info(f"Executing command: {final_cmd}")
 
-        exec_result = await self.sandbox.aexec(
-            final_cmd,
-            timeout=timeout,
-        )
+        exec_result = await self.sandbox.aexec(final_cmd)
 
         # Log the result
         if exec_result.exit_code == 0:
