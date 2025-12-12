@@ -6,6 +6,8 @@ repo_name: fulcrumresearch/lunette
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
   palette:
     scheme: default
   features:
@@ -57,10 +59,10 @@ plugins:
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
+  - Getting Started: quickstart.md
   - Tracing: tracing.md
   - Running Agents: running-agents.md
-  - Investigating: investigating/index.md
+  - Issues and Judging: issues-and-judging.md
   - API Reference:
       - Overview: api/index.md
       - Client: api/client.md

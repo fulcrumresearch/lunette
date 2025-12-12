@@ -4,7 +4,7 @@ Once you've captured trajectories, you can investigate them to understand agent 
 
 ## The Investigation Flow
 
-1. **Browse trajectories** at [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai)
+1. **Browse trajectories** at [lunette.dev](https://lunette.dev)
 2. **Filter** by score, task, model, or metadata to find interesting cases
 3. **Launch an investigation** on a trajectory or set of trajectories
 4. **Review findings** — investigators create issues with evidence and confidence scores

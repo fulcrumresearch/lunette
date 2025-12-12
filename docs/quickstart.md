@@ -8,7 +8,7 @@ pip install lunette-sdk
 
 ## Configuration
 
-Get your API key from [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai), then set it:
+Get your API key from [lunette.dev](https://lunette.dev), then set it:
 
 ```bash
 export LUNETTE_API_KEY="your-api-key-here"
@@ -123,4 +123,4 @@ asyncio.run(main())
 
 With a sandbox, investigators can re-run commands, inspect files, and reproduce errors in the original environment.
 
-You can now view your trajectories at [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai), and then start an investigation to understand your agent behavior.
+You can now view your trajectories at [lunette.dev](https://lunette.dev), and then start an investigation to understand your agent behavior.

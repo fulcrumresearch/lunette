@@ -73,6 +73,6 @@ There are two ways to use it:
 
 ## Links
 
-- **[Web App](https://app.fulcrumresearch.ai)** — Browse trajectories and launch investigations
+- **[Web App](https://lunette.dev)** — Browse trajectories and launch investigations
 - **[Demo](https://demo.fulcrumresearch.ai)** — Try the platform
 - **[GitHub](https://github.com/fulcrum-research/lunette)** — Source code

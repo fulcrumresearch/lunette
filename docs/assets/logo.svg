@@ -2,9 +2,9 @@
   <defs>
     <mask id="lune-cut">
       <rect width="256" height="256" fill="black"/>
-      <circle cx="128" cy="128" r="92" fill="white"/>
+      <circle cx="128" cy="128" r="122" fill="white"/>
       <!-- very chunky dark area: move implied circle far right so less gets cut out -->
-      <circle cx="224" cy="128" r="92" fill="black"/>
+      <circle cx="256" cy="128" r="122" fill="black"/>
     </mask>
 
     <filter id="soften-cusp" x="-25%" y="-25%" width="150%" height="150%">
@@ -12,6 +12,10 @@
     </filter>
   </defs>
 
-  <circle cx="128" cy="128" r="92" stroke="#3A2419" stroke-width="5"/>
-  <circle cx="128" cy="128" r="92" fill="#3A2419" mask="url(#lune-cut)" filter="url(#soften-cusp)"/>
+  <!-- Beige background circle -->
+  <circle cx="128" cy="128" r="122" fill="#ded5bd"/>
+  <!-- Outline -->
+  <circle cx="128" cy="128" r="122" stroke="#3A2419" stroke-width="5" fill="none"/>
+  <!-- Dark crescent -->
+  <circle cx="128" cy="128" r="122" fill="#3A2419" mask="url(#lune-cut)" filter="url(#soften-cusp)"/>
 </svg>
