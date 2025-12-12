@@ -1,27 +1,14 @@
-"""Pydantic models for defining investigation plans."""
+"""Pydantic models for defining analysis plans."""
 
-from typing import Any, Literal
+from typing import Any
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field
 
 
-class InvestigationAgent(BaseModel):
-    """Agent definition for investigating trajectories.
-
-    The agent configuration (model, max_turns, etc.) is handled Cloud-side,
-    so only name and prompt are needed in the SDK.
-    """
-
-    name: str = Field(..., description="Unique identifier for this agent")
-    prompt: str = Field(
-        ..., description="Investigation prompt/instructions for the agent"
-    )
-
-
 class TrajectoryFilters(BaseModel):
-    """Filter criteria for selecting trajectories to investigate.
+    """Filter criteria for selecting trajectories to analyze.
 
     Simple dict-based filters - Cloud side will handle the filtering logic.
     Users can specify any fields from the Trajectory model.
@@ -41,32 +28,41 @@ class TrajectoryFilters(BaseModel):
 
 
 class AnalysisPlan(BaseModel):
-    """Top-level investigation plan definition.
+    """Plan for running analysis on trajectories.
 
-    Defines agents to run and filters for selecting trajectories to investigate.
+    Defines the analysis type, user prompt, trajectory filters, and optional overrides.
     """
 
     name: str | None = Field(
-        None, description="Optional name for this investigation plan"
+        None, description="Optional name for this analysis plan"
     )
-    type: Literal["investigation"] = Field(
+    type: str = Field(
         "investigation",
-        description="Plan type (currently only 'investigation' is supported)",
+        description="Analysis type: 'investigation', 'grading', 'bottleneck', etc.",
     )
-    agent: InvestigationAgent = Field(
-        ...,
-        description="Agent to run on each matching trajectory",
+    prompt: str = Field(
+        "",
+        description="User prompt/instructions for the analysis agent",
     )
     trajectory_filters: TrajectoryFilters = Field(
-        ..., description="Criteria for selecting trajectories to investigate"
+        default_factory=TrajectoryFilters,
+        description="Criteria for selecting trajectories to analyze",
     )
-    disable_sandbox: bool = Field(
-        False,
-        description="If true, disable sandbox access even if trajectories have sandbox_id",
+
+    # Optional overrides (None = use defaults from AnalysisConfig)
+    enable_sandbox: bool | None = Field(
+        None,
+        description="Override sandbox access (None = use type default)",
     )
-    disable_claim_evaluator: bool = Field(
-        False,
-        description="If true, disable claim evaluator MCP server",
+    enable_claim_evaluator: bool | None = Field(
+        None,
+        description="Override claim evaluator access (None = use type default)",
+    )
+
+    # Type-specific params (e.g., score_name for grading)
+    params: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Type-specific parameters (e.g., {'score_name': 'quality'} for grading)",
     )
 
     def to_yaml(self) -> str:
