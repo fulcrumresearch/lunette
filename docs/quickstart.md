@@ -1,9 +1,4 @@
-# Getting Started
-
-Lunette captures your agent's trajectories and helps you understand what's happening. There are two ways to use it:
-
-- **With Inspect AI** — One-line integration if you're already using Inspect
-- **With any LLM** — Wrap your API calls to capture trajectories
+# Quickstart
 
 ## Installation
 
