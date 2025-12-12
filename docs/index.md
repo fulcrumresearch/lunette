@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/logo.svg" alt="Lunette" width="120" height="120">
+</div>
+
 # Lunette
 
 **Lunette captures your agent's trajectories and helps you understand what's happening.**

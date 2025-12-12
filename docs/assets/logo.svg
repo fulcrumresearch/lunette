@@ -1,0 +1,19 @@
+<!-- Lunette icon (transparent background, thinner border, chunky lune) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <mask id="lune-cut">
+      <rect width="256" height="256" fill="black"/>
+      <circle cx="128" cy="128" r="92" fill="white"/>
+      <!-- implied circle (not drawn) -->
+      <circle cx="182" cy="128" r="92" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- thin border circle -->
+  <circle cx="128" cy="128" r="92"
+          stroke="#3A2419" stroke-width="5"/>
+
+  <!-- lune fill -->
+  <circle cx="128" cy="128" r="92"
+          fill="#3A2419" mask="url(#lune-cut)"/>
+</svg>
