@@ -4,9 +4,16 @@
 
 # Lunette
 
-**Lunette captures your agent's trajectories and helps you understand what's happening.**
+**Lunette is a platform for understanding and improving your agents.**
 
-When your AI agent runs—whether it's solving coding tasks, answering questions, or using tools—Lunette records every step. You can then browse these trajectories, see where things went wrong, and launch *investigator agents* that analyze failures for you.
+Lunette works by launching investigator agents that operate in the same environment your agent ran in.
+
+Lunette allows you to:
+
+- Capture trajectories from your agents
+- Run investigator agents in the same environment to find issues
+- Evaluate performance of your agents
+- Improve your agents through AI-powered investigation
 
 ## Why Lunette?
 
