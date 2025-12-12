@@ -6,7 +6,7 @@
 
 **Lunette is a platform for understanding and improving your agents.**
 
-Lunette works by launching investigator agents that operate in the same environment your agent ran in.
+Lunette works by launching investigator agents that operate in the same environment your agent ran in. The purpose of these investigators is to evaluate and assess the agent's trajectory, and then either report issues, or grade the trajectory.
 
 Lunette allows you to:
 
