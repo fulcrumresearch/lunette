@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://docs.lunette.dev/api/">
+        <link rel="canonical" href="https://docs.lunette.dev/examples/swebench-broken-tasks/">
       
       
-        <link rel="prev" href="../examples/code-rubric/">
+        <link rel="prev" href="../../issues-and-judging/">
       
       
-        <link rel="next" href="client/">
+        <link rel="next" href="../code-rubric/">
       
       
         
       
       
-      <link rel="icon" href="../assets/logo.svg">
+      <link rel="icon" href="../../assets/logo.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
     
     
       
-        <title>Overview - Lunette</title>
+        <title>Finding Broken Tasks in SWE-bench - Lunette</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,11 +53,11 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../stylesheets/custom.css">
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#api-reference" class="md-skip">
+        <a href="#finding-broken-tasks-in-swe-bench" class="md-skip">
           Skip to content
         </a>
       
@@ -96,9 +96,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Lunette" class="md-header__button md-logo" aria-label="Lunette" data-md-component="logo">
+    <a href="../.." title="Lunette" class="md-header__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  <img src="../assets/logo.svg" alt="logo">
+  <img src="../../assets/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Finding Broken Tasks in SWE-bench
             
           </span>
         </div>
@@ -208,9 +208,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Lunette" class="md-nav__button md-logo" aria-label="Lunette" data-md-component="logo">
+    <a href="../.." title="Lunette" class="md-nav__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  <img src="../assets/logo.svg" alt="logo">
+  <img src="../../assets/logo.svg" alt="logo">
 
     </a>
     Lunette
@@ -237,7 +237,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -264,7 +264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   
@@ -291,7 +291,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tracing/" class="md-nav__link">
+      <a href="../../tracing/" class="md-nav__link">
         
   
   
@@ -318,7 +318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../running-agents/" class="md-nav__link">
+      <a href="../../running-agents/" class="md-nav__link">
         
   
   
@@ -345,7 +345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../issues-and-judging/" class="md-nav__link">
+      <a href="../../issues-and-judging/" class="md-nav__link">
         
   
   
@@ -369,8 +369,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -381,13 +383,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
@@ -408,7 +408,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -423,10 +423,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../examples/swebench-broken-tasks/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finding Broken Tasks in SWE-bench
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -442,6 +469,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-run-swe-bench" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Run SWE-bench
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-view-your-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. View your results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-launch-an-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Launch an investigation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -454,7 +534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/code-rubric/" class="md-nav__link">
+      <a href="../code-rubric/" class="md-nav__link">
         
   
   
@@ -486,8 +566,6 @@
       
   
   
-    
-  
   
   
     
@@ -500,11 +578,13 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
@@ -525,7 +605,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -540,37 +620,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
         
   
   
@@ -586,48 +639,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#core-classes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core Classes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-models" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Data Models
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -640,7 +651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="client/" class="md-nav__link">
+      <a href="../../api/client/" class="md-nav__link">
         
   
   
@@ -668,7 +679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tracer/" class="md-nav__link">
+      <a href="../../api/tracer/" class="md-nav__link">
         
   
   
@@ -696,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="sandbox/" class="md-nav__link">
+      <a href="../../api/sandbox/" class="md-nav__link">
         
   
   
@@ -724,7 +735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="trajectory/" class="md-nav__link">
+      <a href="../../api/trajectory/" class="md-nav__link">
         
   
   
@@ -779,10 +790,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#core-classes" class="md-nav__link">
+  <a href="#1-run-swe-bench" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Classes
+        1. Run SWE-bench
       
     </span>
   </a>
@@ -790,10 +801,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-models" class="md-nav__link">
+  <a href="#2-view-your-results" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data Models
+        2. View your results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-launch-an-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Launch an investigation
       
     </span>
   </a>
@@ -820,19 +842,28 @@
   
 
 
-<h1 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
-<h2 id="core-classes">Core Classes<a class="headerlink" href="#core-classes" title="Permanent link">&para;</a></h2>
+<h1 id="finding-broken-tasks-in-swe-bench">Finding Broken Tasks in SWE-bench<a class="headerlink" href="#finding-broken-tasks-in-swe-bench" title="Permanent link">&para;</a></h1>
+<p>SWE-bench Verified is the most popular software engineering benchmark, but it still contains unsolvable tasks—broken tests, missing dependencies, ambiguous specifications. This walkthrough shows how to find them.</p>
+<h2 id="1-run-swe-bench">1. Run SWE-bench<a class="headerlink" href="#1-run-swe-bench" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>lunette<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>swebench<span class="w"> </span>--model<span class="w"> </span>anthropic/claude-sonnet-4<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+</code></pre></div>
+<p>This runs 50 SWE-bench instances with full environment capture. Every command, file change, and model response is recorded.</p>
+<h2 id="2-view-your-results">2. View your results<a class="headerlink" href="#2-view-your-results" title="Permanent link">&para;</a></h2>
+<p>Go to <a href="https://lunette.dev">lunette.dev</a> and find your run. You'll see:</p>
 <ul>
-<li><a href="client/"><code>LunetteClient</code></a> — Main client for creating sandboxes and uploading runs</li>
-<li><a href="tracer/"><code>LunetteTracer</code></a> — Captures LLM calls as trajectories</li>
-<li><a href="sandbox/"><code>Sandbox</code></a> — Cloud sandbox for command execution</li>
+<li>Pass/fail for each task</li>
+<li>The full trajectory (what the agent did)</li>
+<li>Access to the original environment</li>
 </ul>
-<h2 id="data-models">Data Models<a class="headerlink" href="#data-models" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="trajectory/"><code>Trajectory</code></a> — Captured agent execution trace</li>
-<li><a href="trajectory/#lunette.models.run.Run"><code>Run</code></a> — Collection of trajectories from an evaluation</li>
-<li><a href="trajectory/#messages">Messages</a> — SystemMessage, UserMessage, AssistantMessage, ToolMessage</li>
-</ul>
+<h2 id="3-launch-an-investigation">3. Launch an investigation<a class="headerlink" href="#3-launch-an-investigation" title="Permanent link">&para;</a></h2>
+<p>Click "Investigate", select the default prompt, and then set it off. The investigator agent will:</p>
+<ol>
+<li>Read what the agent tried to do</li>
+<li>Access the sandbox environment</li>
+<li>Run commands to test hypotheses</li>
+<li>Report what it finds</li>
+</ol>
+<p>Check in a few minutes and you'll see issues start coming in.</p>
 
 
 
@@ -888,10 +919,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
     
   </body>

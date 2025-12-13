@@ -152,6 +152,11 @@ body {
 .md-header {
     color: #ded5bd !important;
     box-shadow: none;
+    height: 60px;
+}
+
+.md-header__inner {
+    height: 60px;
 }
 
 .md-header[data-md-state="shadow"] {
@@ -163,7 +168,30 @@ body {
 .md-header .md-ellipsis,
 .md-header__topic {
     color: #ded5bd !important;
+    font-size: 1.1rem !important;
 }
+
+/* Larger logo in header */
+.md-header .md-logo img,
+.md-header .md-logo svg {
+    height: 36px !important;
+    width: 36px !important;
+}
+
+/* Sign up link in header */
+.md-header__signup {
+    color: #ded5bd !important;
+    font-family: "Courier Prime", monospace;
+    font-size: 0.9rem;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    margin-left: 0.5rem;
+}
+
+.md-header__signup:hover {
+    opacity: 0.7;
+}
+
 
 
 /* Hide nav title */
