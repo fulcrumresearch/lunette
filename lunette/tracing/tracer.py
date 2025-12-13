@@ -103,7 +103,9 @@ class LunetteTracer:
         AnthropicInstrumentor().instrument(tracer_provider=self._provider)
         logger.debug("Instrumented Anthropic")
 
-    def trajectory(self, sample: int | str, **metadata: Any) -> TrajectoryContext:
+    def trajectory(
+        self, sample: int | str, sandbox_id: str | None = None, **metadata: Any
+    ) -> TrajectoryContext:
         """Create a context for tracking a single trajectory (sample).
 
         Can be used as a context manager or decorator:
@@ -121,12 +123,13 @@ class LunetteTracer:
 
         Args:
             sample: Sample identifier (e.g., problem number)
+            sandbox_id: Optional sandbox container ID for this trajectory
             **metadata: Additional metadata to attach to the trajectory
 
         Returns:
             TrajectoryContext that can be used as context manager or decorator
         """
-        return TrajectoryContext(self, sample, metadata)
+        return TrajectoryContext(self, sample, sandbox_id, metadata)
 
     def _add_trajectory(self, trajectory: Trajectory) -> None:
         """Add a completed trajectory to the buffer."""
@@ -162,10 +165,15 @@ class TrajectoryContext:
     """
 
     def __init__(
-        self, tracer: LunetteTracer, sample: int | str, metadata: dict[str, Any]
+        self,
+        tracer: LunetteTracer,
+        sample: int | str,
+        sandbox_id: str | None,
+        metadata: dict[str, Any],
     ) -> None:
         self._tracer = tracer
         self._sample = sample
+        self._sandbox_id = sandbox_id
         self._metadata = metadata
         self._trajectory_id = str(uuid.uuid4())
         self._token: Any = None
@@ -230,6 +238,7 @@ class TrajectoryContext:
             sample=self._sample,
             messages=messages,
             metadata=metadata,
+            sandbox_id=self._sandbox_id,
         )
         self._tracer._add_trajectory(trajectory)
 
