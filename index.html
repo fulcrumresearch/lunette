@@ -14,13 +14,13 @@
       
       
       
-        <link rel="next" href="getting-started/">
+        <link rel="next" href="quickstart/">
       
       
         
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="assets/logo.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
     
     
@@ -96,8 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="Lunette" class="md-header__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="assets/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -208,8 +207,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="." title="Lunette" class="md-nav__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="assets/logo.svg" alt="logo">
 
     </a>
     Lunette
@@ -296,10 +294,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#why-lunette" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        Why Lunette?
       
     </span>
   </a>
@@ -311,6 +309,17 @@
     <span class="md-ellipsis">
       
         How It Works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
       
     </span>
   </a>
@@ -343,7 +352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="getting-started/" class="md-nav__link">
+      <a href="quickstart/" class="md-nav__link">
         
   
   
@@ -424,14 +433,14 @@
   
   
     <li class="md-nav__item">
-      <a href="investigating/" class="md-nav__link">
+      <a href="issues-and-judging/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Investigating
+    Issues and Judging
   
 
     
@@ -672,10 +681,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#why-lunette" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        Why Lunette?
       
     </span>
   </a>
@@ -687,6 +696,17 @@
     <span class="md-ellipsis">
       
         How It Works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
       
     </span>
   </a>
@@ -724,16 +744,29 @@
   
 
 
+<div align="center">
+  <img src="assets/logo.svg" alt="Lunette" width="120" height="120">
+</div>
+
 <h1 id="lunette">Lunette<a class="headerlink" href="#lunette" title="Permanent link">&para;</a></h1>
-<p><strong>Lunette captures your agent's trajectories and helps you understand what's happening.</strong></p>
-<p>When your AI agent runs—whether it's solving coding tasks, answering questions, or using tools—Lunette records every step. You can then browse these trajectories, see where things went wrong, and launch <em>investigator agents</em> that analyze failures for you.</p>
-<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<p>The fastest path is with Inspect AI:</p>
-<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>lunette-sdk
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>inspect<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>your_task.py<span class="w"> </span>--sandbox<span class="w"> </span>lunette
-</code></pre></div>
-<p>Your trajectories are now being captured with full environment access.</p>
-<p>→ <strong><a href="getting-started/">Getting Started Guide</a></strong></p>
+<p><strong>Lunette is a platform for understanding and improving your agents.</strong></p>
+<p>Lunette works by launching investigator agents that operate in the same environment your agent ran in. The purpose of these investigators is to evaluate and assess the agent's trajectory, and then either report issues, or grade the trajectory.</p>
+<p>Lunette allows you to:</p>
+<ul>
+<li>Capture trajectories from your agents</li>
+<li>Run investigator agents in the same environment to find issues</li>
+<li>Evaluate performance of your agents</li>
+<li>Improve your agents through AI-powered investigation</li>
+</ul>
+<h2 id="why-lunette">Why Lunette?<a class="headerlink" href="#why-lunette" title="Permanent link">&para;</a></h2>
+<p>Issues in agent evals are pernicious. Even SWE-bench Verified, the most popular software engineering benchmark, has unsolvable tasks that are useless for understanding agent abilities.</p>
+<p>Lunette uses investigator agents that probe the same environment your agents ran in. You run your agent in isolated Lunette sandboxes, then launch investigations to find both issues and performance bottlenecks. These agents read the trace, modify and run commands in the eval environment to test hypotheses, and report findings that get filtered for high-quality results.</p>
+<p>There are two ways to use it:</p>
+<ul>
+<li><strong>With Inspect AI</strong> — One-line integration if you're already using Inspect</li>
+<li><strong>With any LLM</strong> — Wrap your API calls to capture trajectories</li>
+</ul>
+<p>→ <strong><a href="quickstart/">Get Started</a></strong></p>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
@@ -745,18 +778,35 @@
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg></span> <strong>Investigate</strong></p>
 <hr />
-<p>Launch AI investigators that analyze your trajectories. They can read transcripts, search for patterns, and—with environment mode—execute commands in the original sandbox.</p>
+<p>Launch investigator agents that operate in parallel across trajectories. For each trajectory, an investigator reads the agent trace, modifies and runs commands in the eval environment to test hypotheses, and writes findings.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 12h-4v-2h4m0 6h-4v-2h4m6-6h-2.81a6 6 0 0 0-1.82-1.96L17 4.41 15.59 3l-2.17 2.17a6 6 0 0 0-2.83 0L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20z"/></svg></span> <strong>Find Issues</strong></p>
 <hr />
-<p>Investigators create structured issues with evidence, confidence scores, and message references. Find test mis-specifications, environment problems, and agent failures.</p>
+<p>Validator agents critique findings and filter for high-quality results. Browse structured issues with evidence, confidence scores, and message references. Find test mis-specifications, environment problems, and agent failures.</p>
 </li>
 </ul>
 </div>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
+<p><strong>Guides</strong></p>
+<ul>
+<li><strong><a href="quickstart/">Quickstart</a></strong> — Get up and running with Lunette</li>
+<li><strong><a href="tracing/">Tracing</a></strong> — Capture trajectories from any LLM</li>
+<li><strong><a href="running-agents/">Running Agents</a></strong> — Run agents in Lunette sandboxes</li>
+<li><strong><a href="issues-and-judging/">Issues and Judging</a></strong> — How investigator agents find problems and evaluate performance</li>
+<li><strong><a href="investigating/">Investigations</a></strong> — Launch investigator agents to analyze trajectories</li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><strong><a href="api/">API Overview</a></strong> — Complete API documentation</li>
+<li><strong><a href="api/client/">Client</a></strong> — LunetteClient API</li>
+<li><strong><a href="api/tracer/">Tracer</a></strong> — LunetteTracer API</li>
+<li><strong><a href="api/sandbox/">Sandbox</a></strong> — Sandbox API</li>
+<li><strong><a href="api/trajectory/">Trajectory</a></strong> — Trajectory data models</li>
+</ul>
 <h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong><a href="https://app.fulcrumresearch.ai">Web App</a></strong> — Browse trajectories and launch investigations</li>
+<li><strong><a href="https://lunette.dev">Web App</a></strong> — Browse trajectories and launch investigations</li>
 <li><strong><a href="https://demo.fulcrumresearch.ai">Demo</a></strong> — Try the platform</li>
 <li><strong><a href="https://github.com/fulcrum-research/lunette">GitHub</a></strong> — Source code</li>
 </ul>

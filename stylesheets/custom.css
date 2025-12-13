@@ -171,10 +171,6 @@ body {
     display: none !important;
 }
 
-/* Hide logo icon but keep link functional */
-.md-header__button.md-logo {
-    display: none;
-}
 
 /* Make title a clickable link via JavaScript injection */
 .md-header__title {

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://docs.fulcrumresearch.ai/getting-started/">
+        <link rel="canonical" href="https://docs.fulcrumresearch.ai/quickstart/">
       
       
         <link rel="prev" href="..">
@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../assets/logo.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#getting-started" class="md-skip">
+        <a href="#quickstart" class="md-skip">
           Skip to content
         </a>
       
@@ -98,8 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="Lunette" class="md-header__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -210,8 +209,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="Lunette" class="md-nav__button md-logo" aria-label="Lunette" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/logo.svg" alt="logo">
 
     </a>
     Lunette
@@ -465,14 +463,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../investigating/" class="md-nav__link">
+      <a href="../issues-and-judging/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Investigating
+    Issues and Judging
   
 
     
@@ -804,17 +802,12 @@
   
 
 
-<h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>Lunette captures your agent's trajectories and helps you understand what's happening. There are two ways to use it:</p>
-<ul>
-<li><strong>With Inspect AI</strong> — One-line integration if you're already using Inspect</li>
-<li><strong>With any LLM</strong> — Wrap your API calls to capture trajectories</li>
-</ul>
+<h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>lunette-sdk
 </code></pre></div>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>Get your API key from <a href="https://app.fulcrumresearch.ai">app.fulcrumresearch.ai</a>, then set it:</p>
+<p>Get your API key from <a href="https://lunette.dev">lunette.dev</a>, then set it:</p>
 <div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LUNETTE_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-api-key-here&quot;</span>
 </code></pre></div>
 <h2 id="option-1-inspect-ai">Option 1: Inspect AI<a class="headerlink" href="#option-1-inspect-ai" title="Permanent link">&para;</a></h2>
@@ -910,7 +903,7 @@
 <a id="__codelineno-4-59" name="__codelineno-4-59" href="#__codelineno-4-59"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
 <p>With a sandbox, investigators can re-run commands, inspect files, and reproduce errors in the original environment.</p>
-<p>You can now view your trajectories at <a href="https://app.fulcrumresearch.ai">app.fulcrumresearch.ai</a>, and then start an investigation to understand your agent behavior.</p>
+<p>You can now view your trajectories at <a href="https://lunette.dev">lunette.dev</a>, and then start an investigation to understand your agent behavior.</p>
 
 
 
