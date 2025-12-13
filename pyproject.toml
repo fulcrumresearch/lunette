@@ -1,6 +1,6 @@
 [project]
 name = "lunette-sdk"
-version = "0.1.4"
+version = "0.1.5"
 requires-python = ">=3.10"
 dependencies = [
     "inspect-ai",
@@ -19,6 +19,9 @@ package = true
 
 [tool.setuptools.packages.find]
 include = ["lunette*"]
+
+[tool.setuptools.package-data]
+"lunette.presets" = ["*.yaml"]
 
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals.git" }

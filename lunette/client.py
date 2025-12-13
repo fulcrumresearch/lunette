@@ -110,7 +110,7 @@ class LunetteClient:
         self.base_url = (
             base_url
             or os.environ.get("LUNETTE_BASE_URL")
-            or config.get("base_url", "https://app.fulcrumresearch.ai/api")
+            or config.get("base_url", "https://lunette.dev/api")
         )
         self.timeout = timeout or config.get("timeout", 200)
 

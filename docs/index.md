@@ -4,7 +4,7 @@
 
 # Lunette
 
-**Lunette is a platform for understanding and improving your agents.**
+**Lunette is a platform for understanding and improving your agents.** [Sign up here](https://lunette.dev).
 
 Lunette works by launching investigator agents that operate in the same environment your agent ran in. The purpose of these investigators is to evaluate and assess the agent's trajectory, and then either report issues, or grade the trajectory.
 
@@ -55,24 +55,10 @@ There are two ways to use it:
 
 ## Documentation
 
-**Guides**
+- **[Quickstart](quickstart.md)**
+- **[Tracing](tracing.md)**
+- **[Running Agents](running-agents.md)**
+- **[Issues and Judging](issues-and-judging.md)**
 
-- **[Quickstart](quickstart.md)** — Get up and running with Lunette
-- **[Tracing](tracing.md)** — Capture trajectories from any LLM
-- **[Running Agents](running-agents.md)** — Run agents in Lunette sandboxes
-- **[Issues and Judging](issues-and-judging.md)** — How investigator agents find problems and evaluate performance
-- **[Investigations](investigating/index.md)** — Launch investigator agents to analyze trajectories
+Try Lunette [here](https://lunette.dev).
 
-**API Reference**
-
-- **[API Overview](api/index.md)** — Complete API documentation
-- **[Client](api/client.md)** — LunetteClient API
-- **[Tracer](api/tracer.md)** — LunetteTracer API
-- **[Sandbox](api/sandbox.md)** — Sandbox API
-- **[Trajectory](api/trajectory.md)** — Trajectory data models
-
-## Links
-
-- **[Web App](https://lunette.dev)** — Browse trajectories and launch investigations
-- **[Demo](https://demo.fulcrumresearch.ai)** — Try the platform
-- **[GitHub](https://github.com/fulcrum-research/lunette)** — Source code

@@ -27,7 +27,7 @@ pip install lunette-sdk
 
 ## Configuration
 
-Get your API key from [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai), then set it:
+Get your API key from [lunette.dev](https://lunette.dev), then set it:
 
 ```bash
 export LUNETTE_API_KEY="your-api-key-here"
@@ -74,20 +74,19 @@ asyncio.run(main())
 
 All LLM calls inside `trajectory()` are captured automatically via OpenTelemetry—also works for OpenAI.
 
-You can now view your trajectories at [app.fulcrumresearch.ai](https://app.fulcrumresearch.ai), and then start an investigation to understand your agent behavior.
+You can now view your trajectories at [lunette.dev](https://lunette.dev), and then start an investigation to understand your agent behavior.
 
 ## Documentation
 
-**[Read the full documentation →](https://lunette.fulcrumresearch.ai)**
+**[Read the full documentation →](https://docs.lunette.dev)**
 
-- [Quickstart](https://lunette.fulcrumresearch.ai/quickstart) — Get up and running
-- [Tracing](https://lunette.fulcrumresearch.ai/tracing) — Capture trajectories from any LLM
-- [Running Agents](https://lunette.fulcrumresearch.ai/running-agents) — Run agents in Lunette sandboxes
-- [Issues and Judging](https://lunette.fulcrumresearch.ai/issues-and-judging) — How investigator agents find problems
-- [API Reference](https://lunette.fulcrumresearch.ai/api) — Complete API documentation
+- [Quickstart](https://docs.lunette.dev/quickstart) — Get up and running
+- [Tracing](https://docs.lunette.dev/tracing) — Capture trajectories from any LLM
+- [Running Agents](https://docs.lunette.dev/running-agents) — Run agents in Lunette sandboxes
+- [Issues and Judging](https://docs.lunette.dev/issues-and-judging) — How investigator agents find problems
+- [API Reference](https://docs.lunette.dev/api) — Complete API documentation
 
 ## Links
 
-- **[Web App](https://app.fulcrumresearch.ai)** — Browse trajectories and launch investigations
-- **[Demo](https://demo.fulcrumresearch.ai)** — Try the platform
-- **[Documentation](https://lunette.fulcrumresearch.ai)** — Full docs
+- **[Web App](https://lunette.dev)** — Browse trajectories and launch investigations
+- **[Documentation](https://docs.lunette.dev)** — Full docs

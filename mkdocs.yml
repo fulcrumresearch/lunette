@@ -1,11 +1,12 @@
 site_name: Lunette
 site_description: Platform for understanding agents and evals through investigator agents
-site_url: https://docs.fulcrumresearch.ai
+site_url: https://docs.lunette.dev
 repo_url: https://github.com/fulcrumresearch/lunette
 repo_name: fulcrumresearch/lunette
 
 theme:
   name: material
+  custom_dir: docs/overrides
   logo: assets/logo.svg
   favicon: assets/logo.svg
   palette:
@@ -59,10 +60,13 @@ plugins:
 
 nav:
   - Home: index.md
-  - Getting Started: quickstart.md
+  - Quickstart: quickstart.md
   - Tracing: tracing.md
   - Running Agents: running-agents.md
   - Issues and Judging: issues-and-judging.md
+  - Examples:
+      - Finding Broken Tasks in SWE-bench: examples/swebench-broken-tasks.md
+      - Grading Code with an Agentic Judge: examples/code-rubric.md
   - API Reference:
       - Overview: api/index.md
       - Client: api/client.md
