@@ -1,7 +1,7 @@
 /* Fulcrum-style theme for Material MkDocs */
 
-/* Import fonts - Courier Prime for body, Inter for headers */
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+/* Import fonts - Courier Prime for body, Inter for headers, IBM Plex Mono for header */
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
 
 /* CSS Custom Properties */
 :root,
@@ -37,17 +37,13 @@ html {
     font-size: 16px !important;
 }
 
-/* Global beige background */
+/* Global beige background - lighter for content */
 html,
 body,
 .md-container,
 .md-main,
 .md-main__inner,
 .md-content,
-.md-sidebar,
-.md-sidebar__scrollwrap,
-.md-sidebar__inner,
-.md-nav,
 .md-tabs,
 .md-header,
 .md-typeset {
@@ -64,6 +60,7 @@ body {
 
 .md-content {
     max-width: 700px;
+    margin-left: 2rem;
 }
 
 /* Headers - Inter font, normal weight */
@@ -139,57 +136,82 @@ body {
     opacity: 0.7;
 }
 
-/* Header bar - black background */
+/* Header bar - dark brown background to match frontend */
 .md-header,
 .md-header *,
 .md-header__inner,
 .md-header__ellipsis,
 .md-header__title,
 .md-header__topic {
-    background-color: #333 !important;
+    background-color: #2a2520 !important;
 }
 
 .md-header {
-    color: #ded5bd !important;
+    color: #ffffff !important;
     box-shadow: none;
-    height: 60px;
+    border: none !important;
+    outline: none !important;
+    height: 70px;
 }
 
 .md-header__inner {
-    height: 60px;
+    height: 70px;
+    padding: 0 2rem;
 }
 
 .md-header[data-md-state="shadow"] {
     box-shadow: none;
 }
 
+/* Site name - lowercase monospace like frontend */
+.md-header__title .md-header__topic:first-child {
+    font-family: 'IBM Plex Mono', 'SF Mono', monospace !important;
+    font-weight: 600;
+    font-size: 1.75rem !important;
+    text-transform: lowercase;
+}
+
+/* Page title (Docs link) - same font */
+.md-header__title .md-header__topic:last-child {
+    font-family: 'IBM Plex Mono', 'SF Mono', monospace !important;
+    font-weight: 500;
+    font-size: 1.125rem !important;
+}
+
 .md-header__title,
 .md-header__button,
 .md-header .md-ellipsis,
 .md-header__topic {
-    color: #ded5bd !important;
-    font-size: 1.1rem !important;
+    color: #ffffff !important;
 }
 
-/* Larger logo in header */
+/* Logo in header */
 .md-header .md-logo img,
 .md-header .md-logo svg {
     height: 36px !important;
     width: 36px !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.md-header .md-logo {
+    border: none !important;
+    outline: none !important;
 }
 
 /* Sign up link in header */
 .md-header__signup {
-    color: #ded5bd !important;
-    font-family: "Courier Prime", monospace;
-    font-size: 0.9rem;
+    color: #ffffff !important;
+    font-family: 'IBM Plex Mono', 'SF Mono', monospace;
+    font-size: 1.125rem;
+    font-weight: 500;
     text-decoration: none !important;
     border-bottom: none !important;
     margin-left: 0.5rem;
 }
 
 .md-header__signup:hover {
-    opacity: 0.7;
+    text-decoration: underline !important;
 }
 
 
@@ -209,30 +231,123 @@ body {
 .md-search,
 .md-search__inner,
 .md-search__form {
-    background-color: #333 !important;
+    background-color: #2a2520 !important;
 }
 
 .md-search__input {
-    background-color: #333 !important;
+    background-color: #2a2520 !important;
     color: #fff !important;
 }
 
 .md-search__input::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: #6b6b6b !important;
 }
 
 .md-search__icon {
     color: #fff !important;
 }
 
-
-/* Sidebar and TOC */
-.md-sidebar {
+/* Search results dropdown */
+.md-search__output {
     background-color: #ded5bd !important;
 }
 
-.md-sidebar__scrollwrap {
+.md-search-result {
     background-color: #ded5bd !important;
+}
+
+.md-search-result__item {
+    background-color: #ded5bd !important;
+}
+
+.md-search-result__link {
+    background-color: #ded5bd !important;
+    color: #333 !important;
+}
+
+.md-search-result__link:hover {
+    background-color: #d4cbb3 !important;
+}
+
+.md-search-result__meta {
+    color: #333 !important;
+    background-color: #ded5bd !important;
+}
+
+.md-search-result__title {
+    color: #333 !important;
+}
+
+.md-search-result__teaser {
+    color: #333 !important;
+}
+
+.md-search-result mark {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+    color: #333 !important;
+}
+
+.md-search-result__article {
+    background-color: #ded5bd !important;
+    color: #333 !important;
+}
+
+.md-search-result__icon {
+    color: #333 !important;
+}
+
+.md-search__scrollwrap {
+    background-color: #ded5bd !important;
+}
+
+.md-search-result__list {
+    background-color: #ded5bd !important;
+}
+
+/* All elements in search results */
+.md-search-result *,
+.md-search__output *,
+.md-search__scrollwrap * {
+    color: #333 !important;
+    background-color: transparent !important;
+}
+
+.md-search-result,
+.md-search-result__item,
+.md-search-result__link,
+.md-search-result__article,
+.md-search__output,
+.md-search__scrollwrap {
+    background-color: #ded5bd !important;
+}
+
+
+/* Left sidebar - darker beige */
+.md-sidebar--primary {
+    background-color: #d4cbb3 !important;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+    background-color: #d4cbb3 !important;
+}
+
+.md-sidebar--primary .md-sidebar__inner {
+    background-color: #d4cbb3 !important;
+    padding: 0.5rem;
+}
+
+/* Right sidebar (TOC) - same as content */
+.md-sidebar--secondary {
+    background-color: #ded5bd !important;
+}
+
+.md-sidebar--secondary .md-sidebar__scrollwrap {
+    background-color: #ded5bd !important;
+}
+
+.md-sidebar--secondary .md-sidebar__inner {
+    background-color: #ded5bd !important;
+    padding: 0.5rem;
 }
 
 .md-nav__item .md-nav__link {
@@ -252,6 +367,11 @@ body {
 
 .md-nav--secondary .md-nav__link {
     font-size: 0.95rem;
+    border-bottom: 1px dotted #888 !important;
+}
+
+.md-nav--secondary .md-nav__link:hover {
+    border-bottom-color: #333 !important;
 }
 
 .md-nav--secondary .md-nav__title {
@@ -292,32 +412,40 @@ body {
     color: #333;
 }
 
-/* mkdocstrings function signatures - subtle background, no syntax highlighting */
+/* mkdocstrings function signatures - subtle background */
 .doc-signature,
 .doc-signature code,
 .doc-signature .highlight,
 .doc-signature .highlight pre,
-.doc-signature .highlight code,
-.doc-function code,
-.doc-function .highlight,
-.doc-function .highlight pre,
-.doc-function .highlight code {
+.doc-signature .highlight code {
     background-color: rgba(0, 0, 0, 0.08) !important;
     color: #333 !important;
     font-family: "Courier Prime", monospace;
 }
 
-.doc-signature .highlight span,
-.doc-function .highlight span,
-.doc-function code span {
+.doc-signature .highlight span {
     color: #333 !important;
     font-style: normal !important;
     font-weight: normal !important;
 }
 
-/* Override highlight background specifically for doc-function */
-.md-typeset .doc-function .highlight {
-    background-color: rgba(0, 0, 0, 0.08) !important;
+/* mkdocstrings source code blocks - use dark theme like other code */
+.doc .doc-contents details.quote .highlight,
+.doc .doc-contents details.quote .highlight pre,
+.doc .doc-contents details.quote .highlight code,
+details[data-md-type="quote"] .highlight,
+details[data-md-type="quote"] .highlight pre,
+details[data-md-type="quote"] .highlight code {
+    background-color: #282828 !important;
+    color: #ebdbb2 !important;
+}
+
+/* Source code in mkdocstrings - ensure syntax highlighting works */
+.doc .doc-contents details .highlight span,
+details[data-md-type="quote"] .highlight span {
+    color: inherit !important;
+    font-style: inherit !important;
+    font-weight: inherit !important;
 }
 
 /* mkdocstrings example blocks - remove purple border */
@@ -430,7 +558,7 @@ body {
     color: #ebdbb2 !important;
 }
 
-/* Tables - beige background */
+/* Tables - beige background, tighter spacing */
 .md-typeset table:not([class]) {
     font-size: 0.9rem;
     border: 1px dotted #333;
@@ -442,11 +570,13 @@ body {
     font-family: "Inter", sans-serif;
     font-weight: 500;
     border-bottom: 1px dotted #333;
+    padding: 0.5rem 0.75rem;
 }
 
 .md-typeset table:not([class]) td {
     background-color: #ded5bd !important;
     border-bottom: 1px dotted #777;
+    padding: 0.4rem 0.75rem;
 }
 
 .md-typeset table:not([class]) tr {
@@ -513,33 +643,33 @@ table, th, td, tr {
 
 /* Footer */
 .md-footer {
-    background-color: #333 !important;
-    color: #ded5bd;
-    border-top: 1px dotted #333;
+    background-color: #2a2520 !important;
+    color: #ffffff;
+    border-top: none;
 }
 
 .md-footer a {
-    color: #ded5bd;
-    border-bottom-color: #ded5bd;
+    color: #ffffff;
+    border-bottom-color: #ffffff;
 }
 
 .md-footer-meta {
-    background-color: #333 !important;
+    background-color: #2a2520 !important;
 }
 
 .md-footer-nav {
-    background-color: #333 !important;
+    background-color: #2a2520 !important;
 }
 
 /* Back to top button */
 .md-top {
-    background-color: #333 !important;
-    color: #ded5bd !important;
+    background-color: #2a2520 !important;
+    color: #ffffff !important;
     border: none;
 }
 
 .md-top:hover {
-    background-color: #555 !important;
+    background-color: #3a352f !important;
 }
 
 /* Tabs */
@@ -632,8 +762,18 @@ table, th, td, tr {
     background-color: #333 !important;
 }
 
-/* Navigation expansion */
-.md-nav__toggle ~ .md-nav {
+/* Navigation expansion - left sidebar darker */
+.md-sidebar--primary .md-nav__toggle ~ .md-nav {
+    background-color: #d4cbb3 !important;
+}
+
+/* Navigation items in left sidebar */
+.md-sidebar--primary .md-nav {
+    background-color: #d4cbb3 !important;
+}
+
+/* Navigation items in right sidebar */
+.md-sidebar--secondary .md-nav {
     background-color: #ded5bd !important;
 }
 

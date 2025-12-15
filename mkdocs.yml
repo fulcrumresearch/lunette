@@ -7,8 +7,8 @@ repo_name: fulcrumresearch/lunette
 theme:
   name: material
   custom_dir: docs/overrides
-  logo: assets/logo.svg
-  favicon: assets/logo.svg
+  logo: assets/logo-light.svg
+  favicon: assets/favicon.svg
   palette:
     scheme: default
   features:

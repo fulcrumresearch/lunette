@@ -4,7 +4,7 @@
 
 # Lunette
 
-**Lunette is a platform for understanding and improving your agents.** [Sign up here](https://lunette.dev).
+**Lunette is a platform for understanding and improving your agents**, by [Fulcrum Research](https://fulcrumresearch.ai). [Sign up here](https://lunette.dev).
 
 Lunette works by launching investigator agents that operate in the same environment your agent ran in. The purpose of these investigators is to evaluate and assess the agent's trajectory, and then either report issues, or grade the trajectory.
 
