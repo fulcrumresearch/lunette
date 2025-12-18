@@ -10,11 +10,40 @@ import yaml
 from pydantic import BaseModel, Field
 
 
+# --- trajectory filters ---
+
+
+class ScoreFilter(BaseModel):
+    """Filter for score comparisons."""
+
+    op: Literal["lt", "gt", "lte", "gte", "eq"] = Field(description="Comparison operator")
+    value: float = Field(description="Value to compare against")
+
+
+class TrajectoryFilters(BaseModel):
+    """
+    Filters for selecting which trajectories to analyze.
+
+    All filters are optional. When multiple filters are specified, they are ANDed together.
+    """
+
+    task: str | None = Field(default=None, description="Filter by task name (via run.task)")
+    sample: str | list[str] | None = Field(default=None, description="Filter by sample ID(s)")
+    score: float | ScoreFilter | None = Field(default=None, description="Filter by score (exact value or comparison)")
+
+
+# --- analysis plans ---
+
+
 class AnalysisPlanBase(ABC, BaseModel):
     """Base class for analysis plans."""
 
     name: str | None = Field(None, description="Name for analysis plan")
     prompt: str | None = Field(None, description="Instructions for the analysis agent")
+    trajectory_filters: TrajectoryFilters = Field(
+        default_factory=lambda: TrajectoryFilters(),
+        description="Filters for selecting trajectories to analyze",
+    )
 
     # optional overrides (`None` = use defaults from `AnalysisConfig`)
     enable_sandbox: bool | None = Field(None, description="Enable sandbox access")
