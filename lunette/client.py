@@ -303,7 +303,7 @@ class LunetteClient:
 
         Args:
             run_id: ID of the run to investigate
-            plan: AnalysisPlan with prompt, output_schema, filters, model, max_turns
+            plan: AnalysisPlan with prompt, result_schema, filters, model, max_turns
             limit: Max trajectories to investigate
             batch_size: Agents to run concurrently
 

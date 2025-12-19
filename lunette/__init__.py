@@ -5,6 +5,8 @@ from lunette.tracing import LunetteTracer
 from lunette.analysis import (
     AnalysisPlan,
     TrajectoryFilters,
+    IssueRole,
+    IssueResult,
     BottleneckResult,
     GradeResult,
 )
@@ -19,6 +21,8 @@ __all__ = [
     # `lunette.analysis`
     "AnalysisPlan",
     "TrajectoryFilters",
+    "IssueRole",
+    "IssueResult",
     "BottleneckResult",
     "GradeResult",
     # `lunette.models.investigation`

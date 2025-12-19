@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Annotated, Literal
+from enum import Enum
 from pathlib import Path
+from typing import Annotated, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -32,7 +33,25 @@ class TrajectoryFilters(BaseModel):
     score: float | ScoreFilter | None = Field(default=None, description="Filter by score (exact value or comparison)")
 
 
-# --- analysis plans ---
+# --- result schemas ---
+
+
+class IssueRole(str, Enum):
+    """Role/category of an issue."""
+
+    AGENT = "agent"
+    ENVIRONMENT = "environment"
+
+
+class IssueResult(BaseModel):
+    """Output schema for issue detection analysis."""
+
+    name: str = Field(description="Short name/title for the issue")
+    role: IssueRole = Field(description="Whether the issue is with the agent or environment")
+    description: str = Field(description="Detailed description of the issue")
+    confidence: float = Field(description="Confidence score between 0.0 and 1.0")
+    proof: str = Field(description="Evidence that this issue is real")
+    message_ids: list[int] = Field(default_factory=list, description="Indices of messages related to this issue")
 
 
 class BottleneckResult(BaseModel):
@@ -47,6 +66,9 @@ class GradeResult(BaseModel):
 
     score: float = Field(description="Numerical score between 0.0 and 1.0")
     explanation: str = Field(description="Explanation for the assigned score")
+
+
+# --- analysis plans ---
 
 
 class AnalysisPlanBase(ABC, BaseModel):
@@ -66,6 +88,9 @@ class AnalysisPlanBase(ABC, BaseModel):
     # agent configuration
     model: str | None = Field(None, description="LLM model")
     max_turns: int | None = Field(None, description="Maximum number of turns")
+
+    # result schema for structured output (None = no structured output, e.g. issue detection)
+    result_schema: type[BaseModel] | None = Field(None, description="Pydantic model for structured result")
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> AnalysisPlan:
@@ -123,23 +148,18 @@ class AnalysisPlanBase(ABC, BaseModel):
 
 class IssueDetectionPlan(AnalysisPlanBase):
     type: Literal["issue_detection"] = "issue_detection"
+    result_schema: type[IssueResult] = IssueResult
 
 
 class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
     score_name: str = Field(description="Name of the score to use for grading")
-
-    @property
-    def output_schema(self) -> type[BaseModel]:
-        return GradeResult
+    result_schema: type[GradeResult] = GradeResult
 
 
 class BottleneckPlan(AnalysisPlanBase):
     type: Literal["bottleneck"] = "bottleneck"
-
-    @property
-    def output_schema(self) -> type[BaseModel]:
-        return BottleneckResult
+    result_schema: type[BottleneckResult] = BottleneckResult
 
 
 AnalysisPlan = Annotated[AnalysisPlanBase, Field(discriminator="type")]
