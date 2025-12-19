@@ -1,12 +1,14 @@
 """Pydantic models for defining analysis plans."""
 
+from __future__ import annotations
+
 from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 import yaml
-from pydantic import BaseModel, Field, SkipValidation
+from pydantic import BaseModel, Field
 
 
 # --- trajectory filters ---
@@ -88,8 +90,8 @@ class AnalysisPlanBase(ABC, BaseModel):
     model: str | None = Field(None, description="LLM model")
     max_turns: int | None = Field(None, description="Maximum number of turns")
 
-    # result schema for structured output (None = no structured output, e.g. issue detection)
-    result_schema: type[BaseModel] | None = Field(None, description="Pydantic model for structured result")
+    # result schema for structured output (overridden in subclasses)
+    result_schema: ClassVar = None
 
     def to_yaml(self) -> str:
         """
@@ -114,20 +116,23 @@ class AnalysisPlanBase(ABC, BaseModel):
 
 class IssueDetectionPlan(AnalysisPlanBase):
     type: Literal["issue_detection"] = "issue_detection"
-    result_schema: SkipValidation[type[IssueResult]] = IssueResult
+    result_schema = IssueResult
 
 
 class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
-    result_schema: SkipValidation[type[GradeResult]] = GradeResult
+    result_schema = GradeResult
 
 
 class BottleneckPlan(AnalysisPlanBase):
     type: Literal["bottleneck"] = "bottleneck"
-    result_schema: SkipValidation[type[BottleneckResult]] = BottleneckResult
+    result_schema = BottleneckResult
 
 
-AnalysisPlan = Annotated[AnalysisPlanBase, Field(discriminator="type")]
+AnalysisPlan = Annotated[
+    IssueDetectionPlan | GradingPlan | BottleneckPlan,
+    Field(discriminator="type"),
+]
 
 
 def parse_analysis_plan(yaml_str: str) -> AnalysisPlan:
