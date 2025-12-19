@@ -35,6 +35,20 @@ class TrajectoryFilters(BaseModel):
 # --- analysis plans ---
 
 
+class BottleneckResult(BaseModel):
+    """Output schema for bottleneck analysis."""
+
+    bottleneck: str = Field(description="Description of the primary bottleneck")
+    root_cause_message_id: int | None = Field(None, description="Index of the message where the root cause occurred")
+
+
+class GradeResult(BaseModel):
+    """Output schema for grading analysis."""
+
+    score: float = Field(description="Numerical score between 0.0 and 1.0")
+    explanation: str = Field(description="Explanation for the assigned score")
+
+
 class AnalysisPlanBase(ABC, BaseModel):
     """Base class for analysis plans."""
 
@@ -48,6 +62,10 @@ class AnalysisPlanBase(ABC, BaseModel):
     # optional overrides (`None` = use defaults from `AnalysisConfig`)
     enable_sandbox: bool | None = Field(None, description="Enable sandbox access")
     enable_claim_evaluator: bool | None = Field(None, description="Enable claim evaluator")
+
+    # agent configuration
+    model: str | None = Field(None, description="LLM model")
+    max_turns: int | None = Field(None, description="Maximum number of turns")
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> AnalysisPlan:
@@ -111,9 +129,17 @@ class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
     score_name: str = Field(description="Name of the score to use for grading")
 
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        return GradeResult
+
 
 class BottleneckPlan(AnalysisPlanBase):
     type: Literal["bottleneck"] = "bottleneck"
+
+    @property
+    def output_schema(self) -> type[BaseModel]:
+        return BottleneckResult
 
 
 AnalysisPlan = Annotated[AnalysisPlanBase, Field(discriminator="type")]

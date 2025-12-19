@@ -10,8 +10,9 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
-from lunette.analysis.models import AnalysisPlan
+from lunette.analysis.models import AnalysisPlan, AnalysisPlanBase
 from lunette.logger import get_lunette_logger
+from lunette.models.investigation import InvestigationResults
 from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
 from lunette.sandbox import Sandbox
@@ -104,13 +105,9 @@ class LunetteClient:
         config = self._load_config_file()
 
         # priority: explicit args > env vars > config file > defaults
-        self.api_key = (
-            api_key or os.environ.get("LUNETTE_API_KEY") or config.get("api_key")
-        )
+        self.api_key = api_key or os.environ.get("LUNETTE_API_KEY") or config.get("api_key")
         self.base_url = (
-            base_url
-            or os.environ.get("LUNETTE_BASE_URL")
-            or config.get("base_url", "https://lunette.dev/api")
+            base_url or os.environ.get("LUNETTE_BASE_URL") or config.get("base_url", "https://lunette.dev/api")
         )
         self.timeout = timeout or config.get("timeout", 200)
 
@@ -174,9 +171,7 @@ class LunetteClient:
             if isinstance(service["build"], str):
                 build_dir = Path(service["build"]).expanduser().resolve()
             elif isinstance(service["build"], dict):
-                build_dir = (
-                    Path(service["build"].get("context", ".")).expanduser().resolve()
-                )
+                build_dir = Path(service["build"].get("context", ".")).expanduser().resolve()
 
             if build_dir is None or not build_dir.exists() or not build_dir.is_dir():
                 raise FileNotFoundError(f"Build context not found: {build_dir}")
@@ -297,9 +292,45 @@ class LunetteClient:
         response.raise_for_status()
         return Trajectory.model_validate(response.json())
 
-    async def launch_investigation(
-        self, plan: str, run_id: str, limit: int = 10
-    ) -> dict:
+    async def investigate(
+        self,
+        run_id: str,
+        plan: AnalysisPlan,
+        limit: int | None = None,
+        batch_size: int | None = None,
+    ) -> InvestigationResults:
+        """Run an investigation on a run and return results.
+
+        Args:
+            run_id: ID of the run to investigate
+            plan: AnalysisPlan with prompt, output_schema, filters, model, max_turns
+            limit: Max trajectories to investigate
+            batch_size: Agents to run concurrently
+
+        Returns:
+            InvestigationResults with all trajectory results
+        """
+        # 1. Launch the investigation
+        response = await self._client.post(
+            "/investigations/run",
+            json={
+                "plan": plan.model_dump(mode="python"),
+                "run_id": run_id,
+                "limit": limit,
+                "batch_size": batch_size,
+                "blocking": True,  # Wait for completion to get results
+            },
+            timeout=None,
+        )
+        response.raise_for_status()
+        investigation_run_id = response.json()["run_id"]
+
+        # 2. Fetch the results
+        results_response = await self._client.get(f"/investigations/{investigation_run_id}/results")
+        results_response.raise_for_status()
+        return InvestigationResults.model_validate(results_response.json())
+
+    async def launch_investigation(self, plan: str, run_id: str, limit: int = 10) -> dict:
         """Launch an investigation using a plan YAML.
 
         Args:
@@ -314,7 +345,7 @@ class LunetteClient:
             httpx.HTTPError: For HTTP-related errors
         """
         # Parse YAML to AnalysisPlan object
-        plan_obj = AnalysisPlan.from_yaml(plan)
+        plan_obj = AnalysisPlanBase.from_yaml(plan)
 
         response = await self._client.post(
             "/investigations/run",
@@ -328,9 +359,7 @@ class LunetteClient:
         response.raise_for_status()
         return response.json()
 
-    async def stop_sandboxes(
-        self, sandbox_ids: List[str], save_state: bool = False
-    ) -> dict:
+    async def stop_sandboxes(self, sandbox_ids: List[str], save_state: bool = False) -> dict:
         """Stop one or more sandbox containers and optionally save their state.
 
         This should be called after an evaluation run completes to clean up sandboxes.
