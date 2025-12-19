@@ -11,7 +11,7 @@ from typing import Optional
 
 from inspect_ai.log import read_eval_log, resolve_sample_attachments
 
-from lunette.analysis import AnalysisPlanBase
+from lunette.analysis import parse_analysis_plan
 from lunette.client import LunetteClient
 from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
@@ -61,11 +61,6 @@ async def upload_command(
     task = task_override or getattr(log.eval, "task", None)
     model = model_override or getattr(log.eval, "model", None)
 
-    if not task:
-        raise ValueError("Unable to determine task from log; provide one with '--task TASK_NAME'.")
-    if not model:
-        raise ValueError("Unable to determine model from log; provide one with '--model MODEL_NAME'.")
-
     print(f"Found {len(trajectories)} trajectories for task='{task}' model='{model}'")
 
     run = Run(task=task, model=model, trajectories=trajectories)
@@ -81,7 +76,7 @@ async def investigate_command(plan_file: Path, run_id: str, limit: int):
     with open(plan_file, "r", encoding="utf-8") as f:
         yaml_content = f.read()
 
-    plan = AnalysisPlanBase.from_yaml(yaml_content)
+    plan = parse_analysis_plan(yaml_content)
 
     async with LunetteClient() as client:
         results = await client.investigate(run_id, plan, limit=limit)

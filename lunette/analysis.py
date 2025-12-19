@@ -1,14 +1,12 @@
 """Pydantic models for defining analysis plans."""
 
-from __future__ import annotations
-
 from abc import ABC
 from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SkipValidation
 
 
 # --- trajectory filters ---
@@ -92,39 +90,6 @@ class AnalysisPlanBase(ABC, BaseModel):
     # result schema for structured output (None = no structured output, e.g. issue detection)
     result_schema: type[BaseModel] | None = Field(None, description="Pydantic model for structured result")
 
-    @classmethod
-    def from_yaml(cls, yaml_str: str) -> AnalysisPlan:
-        """Load plan from YAML string.
-
-        Args:
-            yaml_str: YAML string representation of the plan
-
-        Returns:
-            AnalysisPlan instance (or specialized subclass)
-
-        Raises:
-            yaml.YAMLError: If YAML is invalid
-            pydantic.ValidationError: If data doesn't match schema
-        """
-        data = yaml.safe_load(yaml_str)
-
-        if not isinstance(data, dict):
-            raise ValueError("YAML does not contain a valid analysis plan: not a dictionary")
-
-        plan_type = data.get("type")
-        if plan_type is None:
-            raise ValueError("YAML does not contain a 'type' field")
-
-        match plan_type:
-            case "grading":
-                return GradingPlan.model_validate(data)
-            case "issue_detection":
-                return IssueDetectionPlan.model_validate(data)
-            case "bottleneck":
-                return BottleneckPlan.model_validate(data)
-            case _:
-                raise ValueError(f"Unknown plan type: {plan_type}")
-
     def to_yaml(self) -> str:
         """
         Serialize plan to YAML string.
@@ -148,18 +113,52 @@ class AnalysisPlanBase(ABC, BaseModel):
 
 class IssueDetectionPlan(AnalysisPlanBase):
     type: Literal["issue_detection"] = "issue_detection"
-    result_schema: type[IssueResult] = IssueResult
+    result_schema: SkipValidation[type[IssueResult]] = IssueResult
 
 
 class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
     score_name: str = Field(description="Name of the score to use for grading")
-    result_schema: type[GradeResult] = GradeResult
+    result_schema: SkipValidation[type[GradeResult]] = GradeResult
 
 
 class BottleneckPlan(AnalysisPlanBase):
     type: Literal["bottleneck"] = "bottleneck"
-    result_schema: type[BottleneckResult] = BottleneckResult
+    result_schema: SkipValidation[type[BottleneckResult]] = BottleneckResult
 
 
 AnalysisPlan = Annotated[AnalysisPlanBase, Field(discriminator="type")]
+
+
+def parse_analysis_plan(yaml_str: str) -> AnalysisPlan:
+    """Parse an analysis plan from a YAML string.
+
+    Args:
+        yaml_str: YAML string representation of the plan
+
+    Returns:
+        AnalysisPlan instance (IssueDetectionPlan, GradingPlan, or BottleneckPlan)
+
+    Raises:
+        yaml.YAMLError: If YAML is invalid
+        pydantic.ValidationError: If data doesn't match schema
+        ValueError: If plan type is missing or unknown
+    """
+    data = yaml.safe_load(yaml_str)
+
+    if not isinstance(data, dict):
+        raise ValueError("YAML does not contain a valid analysis plan: not a dictionary")
+
+    plan_type = data.get("type")
+    if plan_type is None:
+        raise ValueError("YAML does not contain a 'type' field")
+
+    match plan_type:
+        case "grading":
+            return GradingPlan.model_validate(data)
+        case "issue_detection":
+            return IssueDetectionPlan.model_validate(data)
+        case "bottleneck":
+            return BottleneckPlan.model_validate(data)
+        case _:
+            raise ValueError(f"Unknown plan type: {plan_type}")

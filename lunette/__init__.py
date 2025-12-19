@@ -9,6 +9,7 @@ from lunette.analysis import (
     IssueResult,
     BottleneckResult,
     GradeResult,
+    parse_analysis_plan,
 )
 from lunette.models.investigation import InvestigationResults, TrajectoryResult
 
@@ -25,6 +26,7 @@ __all__ = [
     "IssueResult",
     "BottleneckResult",
     "GradeResult",
+    "parse_analysis_plan",
     # `lunette.models.investigation`
     "InvestigationResults",
     "TrajectoryResult",
