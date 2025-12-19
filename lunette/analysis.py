@@ -62,6 +62,7 @@ class BottleneckResult(BaseModel):
 class GradeResult(BaseModel):
     """Output schema for grading analysis."""
 
+    name: str = Field(description="Name of the score dimension (e.g., 'quality', 'correctness')")
     score: float = Field(description="Numerical score between 0.0 and 1.0")
     explanation: str = Field(description="Explanation for the assigned score")
 
@@ -118,7 +119,6 @@ class IssueDetectionPlan(AnalysisPlanBase):
 
 class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
-    score_name: str = Field(description="Name of the score to use for grading")
     result_schema: SkipValidation[type[GradeResult]] = GradeResult
 
 
