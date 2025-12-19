@@ -11,6 +11,7 @@ from typing import Optional
 
 from inspect_ai.log import read_eval_log, resolve_sample_attachments
 
+from lunette.analysis import AnalysisPlanBase
 from lunette.client import LunetteClient
 from lunette.models.run import Run
 from lunette.models.trajectory import Trajectory
@@ -61,13 +62,9 @@ async def upload_command(
     model = model_override or getattr(log.eval, "model", None)
 
     if not task:
-        raise ValueError(
-            "Unable to determine task from log; provide one with '--task TASK_NAME'."
-        )
+        raise ValueError("Unable to determine task from log; provide one with '--task TASK_NAME'.")
     if not model:
-        raise ValueError(
-            "Unable to determine model from log; provide one with '--model MODEL_NAME'."
-        )
+        raise ValueError("Unable to determine model from log; provide one with '--model MODEL_NAME'.")
 
     print(f"Found {len(trajectories)} trajectories for task='{task}' model='{model}'")
 
@@ -82,11 +79,13 @@ async def upload_command(
 async def investigate_command(plan_file: Path, run_id: str, limit: int):
     """Run investigation command."""
     with open(plan_file, "r", encoding="utf-8") as f:
-        plan = f.read()
+        yaml_content = f.read()
+
+    plan = AnalysisPlanBase.from_yaml(yaml_content)
 
     async with LunetteClient() as client:
-        result = await client.launch_investigation(plan, run_id, limit)
-        print(json.dumps(result, indent=2))
+        results = await client.investigate(run_id, plan, limit=limit)
+        print(json.dumps(results.model_dump(), indent=2))
 
 
 def eval_command(eval_args: list[str]) -> int:
@@ -153,16 +152,12 @@ def main():
         help="Run inspect eval with lunette presets (e.g., lunette eval swebench --model ...)",
     )
 
-    investigate_parser = subparsers.add_parser(
-        "investigate", help="Launch an investigation plan"
-    )
+    investigate_parser = subparsers.add_parser("investigate", help="Launch an investigation plan")
     investigate_parser.add_argument("plan_file", type=Path, help="Path to investigation plan YAML")
     investigate_parser.add_argument("--run-id", required=True, help="ID of the run to investigate")
     investigate_parser.add_argument("--limit", type=int, default=10, help="Max trajectories to investigate")
 
-    upload_parser = subparsers.add_parser(
-        "upload", help="Upload an Inspect .eval/.json log to Lunette"
-    )
+    upload_parser = subparsers.add_parser("upload", help="Upload an Inspect .eval/.json log to Lunette")
     upload_parser.add_argument(
         "log_file",
         type=Path,

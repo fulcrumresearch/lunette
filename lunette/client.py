@@ -10,7 +10,7 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
-from lunette.analysis import AnalysisPlan, AnalysisPlanBase
+from lunette.analysis import AnalysisPlan
 from lunette.logger import get_lunette_logger
 from lunette.models.investigation import InvestigationResults
 from lunette.models.run import Run
@@ -329,35 +329,6 @@ class LunetteClient:
         results_response = await self._client.get(f"/investigations/{investigation_run_id}/results")
         results_response.raise_for_status()
         return InvestigationResults.model_validate(results_response.json())
-
-    async def launch_investigation(self, plan: str, run_id: str, limit: int = 10) -> dict:
-        """Launch an investigation using a plan YAML.
-
-        Args:
-            plan: Investigation plan in YAML format
-            run_id: ID of the run to investigate
-            limit: Maximum number of trajectories to investigate (default: 10)
-
-        Returns:
-            dict with investigation results
-
-        Raises:
-            httpx.HTTPError: For HTTP-related errors
-        """
-        # Parse YAML to AnalysisPlan object
-        plan_obj = AnalysisPlanBase.from_yaml(plan)
-
-        response = await self._client.post(
-            "/investigations/run",
-            json={
-                "plan": plan_obj.model_dump(mode="python"),
-                "run_id": run_id,
-                "limit": limit,
-            },
-            timeout=None,
-        )
-        response.raise_for_status()
-        return response.json()
 
     async def stop_sandboxes(self, sandbox_ids: List[str], save_state: bool = False) -> dict:
         """Stop one or more sandbox containers and optionally save their state.
