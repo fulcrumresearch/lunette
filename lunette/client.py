@@ -10,7 +10,7 @@ from typing import List, Optional
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
 
-from lunette.analysis.models import AnalysisPlan, AnalysisPlanBase
+from lunette.analysis import AnalysisPlan, AnalysisPlanBase
 from lunette.logger import get_lunette_logger
 from lunette.models.investigation import InvestigationResults
 from lunette.models.run import Run

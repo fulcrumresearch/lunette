@@ -2,7 +2,7 @@
 
 from lunette.client import LunetteClient
 from lunette.tracing import LunetteTracer
-from lunette.analysis.models import (
+from lunette.analysis import (
     AnalysisPlan,
     TrajectoryFilters,
     BottleneckResult,
@@ -16,7 +16,7 @@ __all__ = [
     "LunetteClient",
     # `lunette.tracing`
     "LunetteTracer",
-    # `lunette.analysis.models`
+    # `lunette.analysis`
     "AnalysisPlan",
     "TrajectoryFilters",
     "BottleneckResult",
