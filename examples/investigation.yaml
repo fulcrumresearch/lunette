@@ -1,5 +1,5 @@
 name: task_underspecification_investigation
-type: investigation
+kind: issue_detection
 trajectory_filters:
   filters:
     score: [lt, 0.5]

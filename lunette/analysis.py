@@ -1,7 +1,5 @@
 """Pydantic models for defining analysis plans."""
 
-from __future__ import annotations
-
 from abc import ABC
 from enum import Enum
 from pathlib import Path
@@ -115,23 +113,23 @@ class AnalysisPlanBase(ABC, BaseModel):
 
 
 class IssueDetectionPlan(AnalysisPlanBase):
-    type: Literal["issue_detection"] = "issue_detection"
+    kind: Literal["issue_detection"] = "issue_detection"
     result_schema: ClassVar[type[IssueResult]] = IssueResult
 
 
 class GradingPlan(AnalysisPlanBase):
-    type: Literal["grading"] = "grading"
+    kind: Literal["grading"] = "grading"
     result_schema: ClassVar[type[GradeResult]] = GradeResult
 
 
 class BottleneckPlan(AnalysisPlanBase):
-    type: Literal["bottleneck"] = "bottleneck"
+    kind: Literal["bottleneck"] = "bottleneck"
     result_schema: ClassVar[type[BottleneckResult]] = BottleneckResult
 
 
 AnalysisPlan = Annotated[
     IssueDetectionPlan | GradingPlan | BottleneckPlan,
-    Field(discriminator="type"),
+    Field(discriminator="kind"),
 ]
 
 _analysis_plan_adapter = TypeAdapter(AnalysisPlan)
