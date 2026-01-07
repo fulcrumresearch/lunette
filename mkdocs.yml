@@ -64,6 +64,9 @@ nav:
   - Tracing: tracing.md
   - Running Agents: running-agents.md
   - Issues and Judging: issues-and-judging.md
+  - Investigating:
+      - Overview: investigating/index.md
+      - Programmatic: investigating/programmatic.md
   - Examples:
       - Finding Broken Tasks in SWE-bench: examples/swebench-broken-tasks.md
       - Grading Code with an Agentic Judge: examples/code-rubric.md
