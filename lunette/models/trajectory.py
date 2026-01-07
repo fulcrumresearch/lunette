@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import uuid
 from enum import Enum
 from typing import Any
-
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -33,10 +33,7 @@ def _sanitize_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
         elif isinstance(value, dict):
             sanitized[key] = _sanitize_metadata(value)
         elif isinstance(value, list):
-            sanitized[key] = [
-                item.value if isinstance(item, Enum) else item
-                for item in value
-            ]
+            sanitized[key] = [item.value if isinstance(item, Enum) else item for item in value]
         else:
             sanitized[key] = value
     return sanitized
@@ -100,8 +97,8 @@ class Trajectory(BaseModel):
     solution: str | None = None
     """Optional solution or patch produced by the agent."""
 
-    sandbox_id: str | None = None
-    """Optional sandbox container ID if this trajectory ran in a sandbox."""
+    sandbox_id: uuid.UUID | None = None
+    """Optional sandbox ID if this trajectory ran in a sandbox."""
 
     @computed_field
     @property
@@ -168,9 +165,7 @@ class Trajectory(BaseModel):
                     tool_call_id = message.tool_call_id
                     if tool_call_id not in tool_calls:
                         raise ValueError(f"Tool call ID {tool_call_id} not found")
-                    tool_message = ToolMessage.from_inspect(
-                        position, message, tool_calls[tool_call_id]
-                    )
+                    tool_message = ToolMessage.from_inspect(position, message, tool_calls[tool_call_id])
                     messages.append(tool_message)
 
                 case ChatMessageSystem():

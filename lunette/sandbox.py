@@ -1,7 +1,8 @@
 """Lunette SDK Sandbox operations."""
 
 import base64
-from typing import TYPE_CHECKING, Optional
+import uuid
+from typing import TYPE_CHECKING
 
 import httpx
 from inspect_ai.util._sandbox.docker.service import ComposeService
@@ -64,7 +65,7 @@ class Sandbox:
     def __init__(
         self,
         client: "LunetteClient",
-        sandbox_id: str,
+        sandbox_id: uuid.UUID,
         service: ComposeService,
     ):
         """Initialize sandbox instance.
@@ -98,9 +99,7 @@ class Sandbox:
         logger.debug(f"[{self.sandbox_id}] Executing command: {cmd}")
 
         # Make HTTP POST to /sandboxes/{sandbox_id}/exec
-        response = await self.client._client.post(
-            f"/sandboxes/{self.sandbox_id}/exec", json={"command": cmd}
-        )
+        response = await self.client._client.post(f"/sandboxes/{self.sandbox_id}/exec", json={"command": cmd})
 
         response.raise_for_status()
         result = response.json()
@@ -114,17 +113,11 @@ class Sandbox:
 
         # Log the result
         if exec_result.success:
-            logger.debug(
-                f"[{self.sandbox_id}] Command succeeded (exit_code={exec_result.exit_code})"
-            )
+            logger.debug(f"[{self.sandbox_id}] Command succeeded (exit_code={exec_result.exit_code})")
         else:
-            logger.warning(
-                f"[{self.sandbox_id}] Command failed (exit_code={exec_result.exit_code})"
-            )
+            logger.warning(f"[{self.sandbox_id}] Command failed (exit_code={exec_result.exit_code})")
             if exec_result.stderr:
-                logger.warning(
-                    f"[{self.sandbox_id}] stderr: {exec_result.stderr[:500]}"
-                )
+                logger.warning(f"[{self.sandbox_id}] stderr: {exec_result.stderr[:500]}")
 
         return exec_result
 
@@ -147,9 +140,7 @@ class Sandbox:
         if self._destroyed:
             raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
 
-        logger.debug(
-            f"[{self.sandbox_id}] Uploading file: {local_path} -> {remote_path}"
-        )
+        logger.debug(f"[{self.sandbox_id}] Uploading file: {local_path} -> {remote_path}")
 
         # Read local file as bytes
         try:
@@ -195,15 +186,11 @@ class Sandbox:
         if self._destroyed:
             raise SandboxDestroyedError(f"Sandbox {self.sandbox_id} has been destroyed")
 
-        logger.debug(
-            f"[{self.sandbox_id}] Downloading file: {remote_path} -> {local_path}"
-        )
+        logger.debug(f"[{self.sandbox_id}] Downloading file: {remote_path} -> {local_path}")
 
         # GET from read endpoint
         try:
-            response = await self.client._client.get(
-                f"/sandboxes/{self.sandbox_id}/read", params={"path": remote_path}
-            )
+            response = await self.client._client.get(f"/sandboxes/{self.sandbox_id}/read", params={"path": remote_path})
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:

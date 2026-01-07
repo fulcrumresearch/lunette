@@ -4,6 +4,7 @@ import json
 import os
 import tarfile
 import tempfile
+import uuid
 from pathlib import Path
 from typing import List, Optional
 
@@ -223,7 +224,7 @@ class LunetteClient:
 
         sandbox = Sandbox(
             client=self,
-            sandbox_id=result["sandbox_id"],
+            sandbox_id=uuid.UUID(result["sandbox_id"]),
             service=service,
         )
 
@@ -330,7 +331,7 @@ class LunetteClient:
         results_response.raise_for_status()
         return InvestigationResults.model_validate(results_response.json())
 
-    async def stop_sandboxes(self, sandbox_ids: List[str], save_state: bool = False) -> dict:
+    async def stop_sandboxes(self, sandbox_ids: List[uuid.UUID], save_state: bool = False) -> dict:
         """Stop one or more sandbox containers and optionally save their state.
 
         This should be called after an evaluation run completes to clean up sandboxes.
@@ -338,7 +339,7 @@ class LunetteClient:
         during investigations.
 
         Args:
-            sandbox_ids: List of sandbox container IDs to stop
+            sandbox_ids: List of sandbox IDs to stop
             save_state: If True, save sandbox state to S3 before stopping (default: False)
 
         Returns:
@@ -351,7 +352,7 @@ class LunetteClient:
         """
         response = await self._client.post(
             "/sandboxes/stop",
-            json={"sandbox_ids": sandbox_ids, "save_state": save_state},
+            json={"sandbox_ids": [str(sid) for sid in sandbox_ids], "save_state": save_state},
         )
         response.raise_for_status()
         return response.json()
