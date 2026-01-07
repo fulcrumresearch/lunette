@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated, ClassVar, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 
 # --- trajectory filters ---
@@ -91,7 +91,7 @@ class AnalysisPlanBase(ABC, BaseModel):
     max_turns: int | None = Field(None, description="Maximum number of turns")
 
     # result schema for structured output (overridden in subclasses)
-    result_schema: ClassVar = None
+    result_schema: ClassVar[type[BaseModel] | None] = None
 
     def to_yaml(self) -> str:
         """
@@ -116,23 +116,25 @@ class AnalysisPlanBase(ABC, BaseModel):
 
 class IssueDetectionPlan(AnalysisPlanBase):
     type: Literal["issue_detection"] = "issue_detection"
-    result_schema = IssueResult
+    result_schema: ClassVar[type[IssueResult]] = IssueResult
 
 
 class GradingPlan(AnalysisPlanBase):
     type: Literal["grading"] = "grading"
-    result_schema = GradeResult
+    result_schema: ClassVar[type[GradeResult]] = GradeResult
 
 
 class BottleneckPlan(AnalysisPlanBase):
     type: Literal["bottleneck"] = "bottleneck"
-    result_schema = BottleneckResult
+    result_schema: ClassVar[type[BottleneckResult]] = BottleneckResult
 
 
 AnalysisPlan = Annotated[
     IssueDetectionPlan | GradingPlan | BottleneckPlan,
     Field(discriminator="type"),
 ]
+
+_analysis_plan_adapter = TypeAdapter(AnalysisPlan)
 
 
 def parse_analysis_plan(yaml_str: str) -> AnalysisPlan:
@@ -147,23 +149,6 @@ def parse_analysis_plan(yaml_str: str) -> AnalysisPlan:
     Raises:
         yaml.YAMLError: If YAML is invalid
         pydantic.ValidationError: If data doesn't match schema
-        ValueError: If plan type is missing or unknown
     """
     data = yaml.safe_load(yaml_str)
-
-    if not isinstance(data, dict):
-        raise ValueError("YAML does not contain a valid analysis plan: not a dictionary")
-
-    plan_type = data.get("type")
-    if plan_type is None:
-        raise ValueError("YAML does not contain a 'type' field")
-
-    match plan_type:
-        case "grading":
-            return GradingPlan.model_validate(data)
-        case "issue_detection":
-            return IssueDetectionPlan.model_validate(data)
-        case "bottleneck":
-            return BottleneckPlan.model_validate(data)
-        case _:
-            raise ValueError(f"Unknown plan type: {plan_type}")
+    return _analysis_plan_adapter.validate_python(data)
