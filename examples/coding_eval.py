@@ -1,6 +1,13 @@
 import asyncio
+
 from anthropic import AsyncAnthropic
+from dotenv import load_dotenv
+
 from lunette import LunetteClient, LunetteTracer
+
+
+load_dotenv()
+
 
 PROBLEMS = [
     {
