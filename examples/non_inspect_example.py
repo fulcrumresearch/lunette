@@ -171,7 +171,6 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
 
         # Create and save run
         run = Run(
-            run_id="non-inspect-example-run",
             task="fibonacci-script-creation",
             model="claude-3-5-sonnet-20241022",
             trajectories=[trajectory],
@@ -179,7 +178,7 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
 
         print("Saving run to Fulcrum...")
         result = await lunette_client.save_run(run)
-        print(f"✓ Run saved successfully!")
+        print("✓ Run saved successfully!")
         print(f"  Run ID: {result['run_id']}")
         print(f"  Trajectory IDs: {result['trajectory_ids']}")
 
