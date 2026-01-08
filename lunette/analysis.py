@@ -117,6 +117,13 @@ class IssueDetectionPlan(AnalysisPlanBase):
     result_schema: ClassVar[type[IssueResult]] = IssueResult
 
 
+class InvestigationPlan(AnalysisPlanBase):
+    """Alias for IssueDetectionPlan - 'investigation' is a friendly name for issue detection."""
+
+    kind: Literal["investigation"] = "investigation"
+    result_schema: ClassVar[type[IssueResult]] = IssueResult
+
+
 class GradingPlan(AnalysisPlanBase):
     kind: Literal["grading"] = "grading"
     result_schema: ClassVar[type[GradeResult]] = GradeResult
@@ -128,7 +135,7 @@ class BottleneckPlan(AnalysisPlanBase):
 
 
 AnalysisPlan = Annotated[
-    IssueDetectionPlan | GradingPlan | BottleneckPlan,
+    IssueDetectionPlan | InvestigationPlan | GradingPlan | BottleneckPlan,
     Field(discriminator="kind"),
 ]
 
