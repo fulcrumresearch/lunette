@@ -69,9 +69,7 @@ async def main():
             messages.append(assistant_msg.model_dump())
 
             for tool_call in assistant_msg.tool_calls:
-                print(
-                    f"Tool call: {tool_call.function.name}({tool_call.function.arguments})"
-                )
+                print(f"Tool call: {tool_call.function.name}({tool_call.function.arguments})")
 
                 if tool_call.function.name == "multiply":
                     args = json.loads(tool_call.function.arguments)

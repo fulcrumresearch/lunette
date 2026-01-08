@@ -31,14 +31,9 @@ BASH_TOOL = {
     "description": "Execute a bash command in the sandbox environment. Use this to interact with the system, run scripts, check files, etc.",
     "input_schema": {
         "type": "object",
-        "properties": {
-            "command": {
-                "type": "string",
-                "description": "The bash command to execute"
-            }
-        },
-        "required": ["command"]
-    }
+        "properties": {"command": {"type": "string", "description": "The bash command to execute"}},
+        "required": ["command"],
+    },
 }
 
 
@@ -90,7 +85,7 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
                 max_tokens=4096,
                 system=system_prompt,
                 messages=claude_messages,
-                tools=[BASH_TOOL]
+                tools=[BASH_TOOL],
             )
 
             # Process response
@@ -102,28 +97,19 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
                     assistant_content += block.text
                     print(f"Agent: {block.text}")
                 elif block.type == "tool_use":
-                    tool_call = ToolCall(
-                        id=block.id,
-                        function=block.name,
-                        arguments=block.input
-                    )
+                    tool_call = ToolCall(id=block.id, function=block.name, arguments=block.input)
                     tool_calls.append(tool_call)
                     print(f"Tool call: {block.name}({json.dumps(block.input, indent=2)})")
 
             # Add assistant message to trajectory
             assistant_msg = AssistantMessage(
-                position=position,
-                content=assistant_content or "",
-                tool_calls=tool_calls if tool_calls else None
+                position=position, content=assistant_content or "", tool_calls=tool_calls if tool_calls else None
             )
             messages.append(assistant_msg)
             position += 1
 
             # Add to Claude conversation
-            claude_messages.append({
-                "role": "assistant",
-                "content": response.content
-            })
+            claude_messages.append({"role": "assistant", "content": response.content})
 
             # If no tool calls, agent is done
             if not tool_calls:
@@ -148,25 +134,14 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
                     print(f"Result: {output[:200]}..." if len(output) > 200 else f"Result: {output}")
 
                     # Add tool message to trajectory
-                    tool_msg = ToolMessage(
-                        position=position,
-                        content=output,
-                        tool_call=tool_call
-                    )
+                    tool_msg = ToolMessage(position=position, content=output, tool_call=tool_call)
                     messages.append(tool_msg)
                     position += 1
 
                     # Add to Claude conversation
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": tool_call.id,
-                        "content": output
-                    })
+                    tool_results.append({"type": "tool_result", "tool_use_id": tool_call.id, "content": output})
 
-            claude_messages.append({
-                "role": "user",
-                "content": tool_results
-            })
+            claude_messages.append({"role": "user", "content": tool_results})
 
             print()
 
@@ -175,25 +150,23 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
         verification = await sandbox.aexec("cat /tmp/fibonacci.py && python /tmp/fibonacci.py")
         task_succeeded = verification.success and "fibonacci" in verification.stdout.lower()
 
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"Task succeeded: {task_succeeded}")
-        print(f"{'='*50}\n")
+        print(f"{'=' * 50}\n")
 
         # Create trajectory with score
         score = ScalarScore(
             value=1.0 if task_succeeded else 0.0,
-            explanation="Successfully created and executed Fibonacci script" if task_succeeded else "Failed to complete task"
+            explanation="Successfully created and executed Fibonacci script"
+            if task_succeeded
+            else "Failed to complete task",
         )
 
         trajectory = Trajectory(
             sample="fibonacci_task_001",
             messages=messages,
             scores={"success": score},
-            metadata={
-                "sandbox_id": sandbox.container_id,
-                "task": "fibonacci_script",
-                "turns": turn + 1
-            }
+            metadata={"sandbox_id": sandbox.container_id, "task": "fibonacci_script", "turns": turn + 1},
         )
 
         # Create and save run
@@ -201,7 +174,7 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
             run_id="non-inspect-example-run",
             task="fibonacci-script-creation",
             model="claude-3-5-sonnet-20241022",
-            trajectories=[trajectory]
+            trajectories=[trajectory],
         )
 
         print("Saving run to Fulcrum...")

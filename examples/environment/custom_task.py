@@ -93,9 +93,7 @@ async def run_agent(sandbox, problem: str) -> str:
 
                     # execute in sandbox
                     result = await sandbox.aexec(block.input["command"])
-                    output = (
-                        result.stdout if result.success else f"Error: {result.stderr}"
-                    )
+                    output = result.stdout if result.success else f"Error: {result.stderr}"
 
                     print(f"Result: {output[:200]}...")
 

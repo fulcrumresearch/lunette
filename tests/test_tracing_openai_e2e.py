@@ -24,7 +24,9 @@ from lunette.tracing import LunetteTracer
 load_dotenv()
 
 # small 10x10 red square PNG for testing (base64 encoded)
-TEST_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
+TEST_IMAGE_BASE64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
+)
 
 
 async def main():
@@ -66,9 +68,7 @@ async def main():
         print(f"Turn 1: {response1.choices[0].message.content}")
 
         # second turn
-        messages.append(
-            {"role": "assistant", "content": response1.choices[0].message.content}
-        )
+        messages.append({"role": "assistant", "content": response1.choices[0].message.content})
         messages.append({"role": "user", "content": "What's its population?"})
 
         response2 = await client.chat.completions.create(
@@ -115,9 +115,7 @@ async def main():
     user_msg = image_traj.messages[0]
     print(f"Content type captured: {type(user_msg.content).__name__}")
     print(f"Content: {repr(user_msg.content)[:100]}")
-    print(
-        "⚠ OpenAI instrumentation does not capture multimodal content (known limitation)\n"
-    )
+    print("⚠ OpenAI instrumentation does not capture multimodal content (known limitation)\n")
 
     # print captured trajectories (without uploading)
     print("=" * 50)
@@ -125,18 +123,14 @@ async def main():
     print("=" * 50)
 
     for traj in tracer._trajectories:
-        print(
-            f"\n--- Trajectory sample={traj.sample} ({len(traj.messages)} messages) ---"
-        )
+        print(f"\n--- Trajectory sample={traj.sample} ({len(traj.messages)} messages) ---")
         for msg in traj.messages:
             role = msg.role
             # handle both string and list content
             if isinstance(msg.content, list):
                 content_str = f"[{len(msg.content)} content blocks]"
             else:
-                content_str = (
-                    msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
-                )
+                content_str = msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
             print(f"  [{msg.position}] {role}: {content_str}")
 
     # show what would be uploaded
@@ -150,10 +144,7 @@ async def main():
         model=tracer.model,
         trajectories=tracer._trajectories,
     )
-    print(
-        json.dumps(run.model_dump(), indent=2, default=str, ensure_ascii=False)[:2000]
-        + "\n..."
-    )
+    print(json.dumps(run.model_dump(), indent=2, default=str, ensure_ascii=False)[:2000] + "\n...")
 
     print("\n✓ Tracing works! (skipped actual upload)")
 

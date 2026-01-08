@@ -24,7 +24,9 @@ from lunette.tracing import LunetteTracer
 load_dotenv()
 
 # small 10x10 red square PNG for testing (base64 encoded)
-TEST_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
+TEST_IMAGE_BASE64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR4nGP8z4APMOGVHbHSAEEsAROxCnMTAAAAAElFTkSuQmCC"
+)
 
 
 async def main():
@@ -114,14 +116,10 @@ async def main():
     # verify image was captured
     image_traj = tracer._trajectories[-1]
     user_msg = image_traj.messages[0]
-    assert isinstance(user_msg.content, list), (
-        "Expected list content for multimodal message"
-    )
+    assert isinstance(user_msg.content, list), "Expected list content for multimodal message"
     content_types = [type(c).__name__ for c in user_msg.content]
     print(f"Captured content types: {content_types}")
-    assert any(isinstance(c, Image) for c in user_msg.content), (
-        "Expected Image in content"
-    )
+    assert any(isinstance(c, Image) for c in user_msg.content), "Expected Image in content"
     print("✓ Image content captured correctly!\n")
 
     # print captured trajectories (without uploading)
@@ -130,18 +128,14 @@ async def main():
     print("=" * 50)
 
     for traj in tracer._trajectories:
-        print(
-            f"\n--- Trajectory sample={traj.sample} ({len(traj.messages)} messages) ---"
-        )
+        print(f"\n--- Trajectory sample={traj.sample} ({len(traj.messages)} messages) ---")
         for msg in traj.messages:
             role = msg.role
             # handle both string and list content
             if isinstance(msg.content, list):
                 content_str = f"[{len(msg.content)} content blocks]"
             else:
-                content_str = (
-                    msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
-                )
+                content_str = msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
             print(f"  [{msg.position}] {role}: {content_str}")
 
     # show what would be uploaded
@@ -155,10 +149,7 @@ async def main():
         model=tracer.model,
         trajectories=tracer._trajectories,
     )
-    print(
-        json.dumps(run.model_dump(), indent=2, default=str, ensure_ascii=False)[:2000]
-        + "\n..."
-    )
+    print(json.dumps(run.model_dump(), indent=2, default=str, ensure_ascii=False)[:2000] + "\n...")
 
     print("\n✓ Anthropic tracing works! (skipped actual upload)")
 

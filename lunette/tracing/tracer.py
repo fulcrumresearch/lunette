@@ -103,9 +103,7 @@ class LunetteTracer:
         AnthropicInstrumentor().instrument(tracer_provider=self._provider)
         logger.debug("Instrumented Anthropic")
 
-    def trajectory(
-        self, sample: int | str, sandbox_id: str | None = None, **metadata: Any
-    ) -> TrajectoryContext:
+    def trajectory(self, sample: int | str, sandbox_id: str | None = None, **metadata: Any) -> TrajectoryContext:
         """Create a context for tracking a single trajectory (sample).
 
         Can be used as a context manager or decorator:
@@ -185,8 +183,7 @@ class TrajectoryContext:
         # check for nested trajectories
         if trajectory_context_id_var.get() is not None:
             raise RuntimeError(
-                "Nested trajectories are not supported. "
-                "Complete the current trajectory before starting a new one."
+                "Nested trajectories are not supported. Complete the current trajectory before starting a new one."
             )
 
         # set contextvar for async propagation
@@ -211,9 +208,7 @@ class TrajectoryContext:
         if self._span:
             if exc_val:
                 self._span.record_exception(exc_val)
-                self._span.set_status(
-                    trace.Status(trace.StatusCode.ERROR, str(exc_val))
-                )
+                self._span.set_status(trace.Status(trace.StatusCode.ERROR, str(exc_val)))
             self._span.end()
 
         if self._otel_token is not None:

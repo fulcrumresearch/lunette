@@ -81,14 +81,10 @@ class LunetteLoggerHook(Hooks):
             )
 
             self.trajectories.append(trajectory)
-            logger.info(
-                f"Buffered trajectory for sample {trajectory.sample} ({len(self.trajectories)} total)"
-            )
+            logger.info(f"Buffered trajectory for sample {trajectory.sample} ({len(self.trajectories)} total)")
 
         except Exception as e:
-            logger.error(
-                f"Failed to buffer trajectory for sample {data.sample_id}: {e}"
-            )
+            logger.error(f"Failed to buffer trajectory for sample {data.sample_id}: {e}")
 
     async def on_task_end(self, data: TaskEnd) -> None:
         """Called when a task completes. Uploads the complete run.
@@ -112,9 +108,7 @@ class LunetteLoggerHook(Hooks):
 
         result = await self.client.save_run(run)
 
-        logger.info(
-            f"Saved run {result['run_id']} with {len(result['trajectory_ids'])} trajectories"
-        )
+        logger.info(f"Saved run {result['run_id']} with {len(result['trajectory_ids'])} trajectories")
 
         # Collect sandbox IDs and stop them
         sandbox_ids = [t.sandbox_id for t in self.trajectories if t.sandbox_id]

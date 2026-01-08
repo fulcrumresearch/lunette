@@ -31,9 +31,7 @@ if TYPE_CHECKING:
     from opentelemetry.sdk.trace import ReadableSpan
 
 
-def _content_hash(
-    role: str, content: str | list[Content], tool_calls: list[ToolCall] | None = None
-) -> str:
+def _content_hash(role: str, content: str | list[Content], tool_calls: list[ToolCall] | None = None) -> str:
     """Create a hash of message content for deduplication.
 
     For assistant messages with tool_calls, include the tool call IDs in the hash
@@ -183,9 +181,7 @@ def _parse_content(raw_content: Any) -> str | list[Content]:
     return str(raw_content)
 
 
-def _extract_indexed_attributes(
-    attributes: dict[str, Any], prefix: str
-) -> list[dict[str, Any]]:
+def _extract_indexed_attributes(attributes: dict[str, Any], prefix: str) -> list[dict[str, Any]]:
     """Extract indexed attributes like gen_ai.prompt.0.role into a list of dicts.
 
     Handles nested indexed attributes like:
@@ -344,20 +340,13 @@ def _extract_messages_from_span(
         # for assistant messages with tool_calls, check if raw content is tool_use JSON
         # (Anthropic serializes tool blocks as JSON content - we should ignore it)
         # must check BEFORE _parse_content which mangles the JSON
-        if (
-            role == "assistant"
-            and tool_calls
-            and isinstance(raw_content, str)
-            and _is_tool_use_json(raw_content)
-        ):
+        if role == "assistant" and tool_calls and isinstance(raw_content, str) and _is_tool_use_json(raw_content):
             content = ""
         else:
             content = _parse_content(raw_content)
 
         # skip if we've seen this exact message before (include tool_calls in hash)
-        msg_hash = _content_hash(
-            role, content, tool_calls if role == "assistant" else None
-        )
+        msg_hash = _content_hash(role, content, tool_calls if role == "assistant" else None)
         if msg_hash in seen_hashes:
             continue
         seen_hashes.add(msg_hash)
@@ -397,19 +386,11 @@ def _extract_messages_from_span(
                 tool_call_id = prompt.get("tool_call_id", "")
                 tool_call = tool_calls_by_id.get(tool_call_id)
                 if tool_call:
-                    messages.append(
-                        ToolMessage(
-                            position=position, content=content, tool_call=tool_call
-                        )
-                    )
+                    messages.append(ToolMessage(position=position, content=content, tool_call=tool_call))
                     position += 1
 
             case "assistant":
-                messages.append(
-                    AssistantMessage(
-                        position=position, content=content, tool_calls=tool_calls
-                    )
-                )
+                messages.append(AssistantMessage(position=position, content=content, tool_calls=tool_calls))
                 position += 1
 
     # extract completion messages (these are always new)
@@ -429,9 +410,7 @@ def _extract_messages_from_span(
         msg_hash = _content_hash(role, content, tool_calls)
         seen_hashes.add(msg_hash)
 
-        messages.append(
-            AssistantMessage(position=position, content=content, tool_calls=tool_calls)
-        )
+        messages.append(AssistantMessage(position=position, content=content, tool_calls=tool_calls))
         position += 1
 
     return messages, position
@@ -452,9 +431,7 @@ def convert_spans_to_messages(spans: list[ReadableSpan]) -> list[Message]:
     position = 0
 
     for span in spans:
-        new_messages, position = _extract_messages_from_span(
-            span, seen_hashes, tool_calls_by_id, position
-        )
+        new_messages, position = _extract_messages_from_span(span, seen_hashes, tool_calls_by_id, position)
         messages.extend(new_messages)
 
     return messages

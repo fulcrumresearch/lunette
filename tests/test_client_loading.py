@@ -60,9 +60,7 @@ async def test_get_run():
     # Setup mock client
     client = LunetteClient(base_url="http://test", api_key="test")
     client._client.get = AsyncMock(
-        return_value=MagicMock(
-            status_code=200, json=lambda: mock_run_data, raise_for_status=lambda: None
-        )
+        return_value=MagicMock(status_code=200, json=lambda: mock_run_data, raise_for_status=lambda: None)
     )
 
     # Test get_run

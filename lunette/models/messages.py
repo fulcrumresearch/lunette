@@ -162,9 +162,7 @@ class SystemMessage(BaseMessage):
     role: Literal["system"] = "system"
 
     @classmethod
-    def from_inspect(
-        cls, position: int, message: InspectSystemMessage
-    ) -> SystemMessage:
+    def from_inspect(cls, position: int, message: InspectSystemMessage) -> SystemMessage:
         """Convert an Inspect AI `ChatMessageSystem` to `SystemMessage`."""
         return cls(position=position, content=_content_from_inspect(message.content))
 
@@ -187,14 +185,10 @@ class AssistantMessage(BaseMessage):
     tool_calls: list[ToolCall] | None = None
 
     @classmethod
-    def from_inspect(
-        cls, position: int, message: InspectAssistantMessage
-    ) -> AssistantMessage:
+    def from_inspect(cls, position: int, message: InspectAssistantMessage) -> AssistantMessage:
         """Convert an Inspect AI `ChatMessageAssistant` to `AssistantMessage`."""
         tool_calls = (
-            [ToolCall.from_inspect(tool_call) for tool_call in message.tool_calls]
-            if message.tool_calls
-            else None
+            [ToolCall.from_inspect(tool_call) for tool_call in message.tool_calls] if message.tool_calls else None
         )
 
         return cls(

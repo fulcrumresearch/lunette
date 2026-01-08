@@ -17,15 +17,14 @@ PROBLEMS = [
     },
 ]
 
-TOOLS = [{
-    "name": "bash",
-    "description": "Execute a bash command",
-    "input_schema": {
-        "type": "object",
-        "properties": {"command": {"type": "string"}},
-        "required": ["command"]
+TOOLS = [
+    {
+        "name": "bash",
+        "description": "Execute a bash command",
+        "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
     }
-}]
+]
+
 
 async def run_agent(sandbox, prompt: str) -> str:
     client = AsyncAnthropic()
@@ -50,15 +49,12 @@ async def run_agent(sandbox, prompt: str) -> str:
             if block.type == "tool_use":
                 result = await sandbox.aexec(block.input["command"])
                 output = result.stdout if result.success else f"Error: {result.stderr}"
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": output
-                })
+                tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": output})
 
         messages.append({"role": "user", "content": tool_results})
 
     return "max_turns"
+
 
 async def main():
     tracer = LunetteTracer(task="coding-eval", model="claude-sonnet-4")
@@ -75,5 +71,6 @@ async def main():
 
     result = await tracer.close()
     print(f"Run ID: {result['run_id']}")
+
 
 asyncio.run(main())

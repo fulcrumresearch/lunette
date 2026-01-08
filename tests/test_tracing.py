@@ -137,9 +137,7 @@ def test_parse_tool_calls_otel_nested_format():
     # gen_ai.completion.0.tool_calls.0.name, .arguments, .id
     completion = {
         "role": "assistant",
-        "tool_calls": [
-            {"name": "multiply", "arguments": '{"a": 7, "b": 8}', "id": "call_123"}
-        ],
+        "tool_calls": [{"name": "multiply", "arguments": '{"a": 7, "b": 8}', "id": "call_123"}],
     }
 
     result = _parse_tool_calls(completion)
