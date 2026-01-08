@@ -1,5 +1,7 @@
 """Run model for grouping trajectories from a single evaluation."""
 
+import uuid
+
 from pydantic import BaseModel
 
 from lunette.models.trajectory import Trajectory
@@ -13,7 +15,7 @@ class Run(BaseModel):
     All trajectories in a run share the same task and model.
     """
 
-    id: str | None = None
+    id: uuid.UUID | None = None
     """Optional server-assigned run ID. If None, server generates a UUID. If provided, appends to existing run."""
 
     task: str
