@@ -56,9 +56,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         return 2 * count
 
     @classmethod
-    async def task_init(
-        cls, task_name: str, config: SandboxEnvironmentConfigType | None
-    ) -> None:
+    async def task_init(cls, task_name: str, config: SandboxEnvironmentConfigType | None) -> None:
         # validate prereqs
         await validate_prereqs()
 
@@ -67,9 +65,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
 
         try:
             # create project
-            project = await ComposeProject.create(
-                name=task_project_name(task_name), config=config
-            )
+            project = await ComposeProject.create(name=task_project_name(task_name), config=config)
 
             # record auto compose
             project_record_auto_compose(project)
@@ -113,9 +109,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
                     if image not in resolved.config_text:
                         return resolved.env
             else:
-                logger.warning(
-                    f"Unexpected error reading compose file '{resolved.config_file}': {result.stderr}"
-                )
+                logger.warning(f"Unexpected error reading compose file '{resolved.config_file}': {result.stderr}")
 
         # no per-sample environment required
         return {}
@@ -158,13 +152,9 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
             if sample is not None:
                 if sample.sample.metadata is None:
                     sample.sample.metadata = {}
-                sample.sample.metadata["lunette_sandbox_id"] = sandbox.sandbox_id
+                sample.sample.metadata["lunette_sandbox_id"] = str(sandbox.sandbox_id)
 
-            return {
-                name: LunetteSandboxEnvironment(
-                    sandbox=sandbox, client=client, service=name, project=project
-                )
-            }
+            return {name: LunetteSandboxEnvironment(sandbox=sandbox, client=client, service=name, project=project)}
 
         except BaseException as ex:
             await project_cleanup(project, True)
@@ -184,9 +174,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         pass
 
     @classmethod
-    async def task_cleanup(
-        cls, task_name: str, config: SandboxEnvironmentConfigType | None, cleanup: bool
-    ) -> None:
+    async def task_cleanup(cls, task_name: str, config: SandboxEnvironmentConfigType | None, cleanup: bool) -> None:
         await project_cleanup_shutdown(cleanup)
 
     @classmethod
@@ -236,7 +224,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
             state = sample_state()
             if state.metadata is None:
                 state.metadata = {}
-            state.metadata["lunette_sandbox_id"] = self.sandbox.sandbox_id
+            state.metadata["lunette_sandbox_id"] = str(self.sandbox.sandbox_id)
             self._metadata_set = True
 
         stdin_redir = ""
@@ -265,9 +253,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         if exec_result.exit_code == 0:
             logger.info(f"Command succeeded (exit_code={exec_result.exit_code})")
             if exec_result.stdout:
-                logger.debug(
-                    f"stdout: {exec_result.stdout[:500]}"
-                )  # Truncate long output
+                logger.debug(f"stdout: {exec_result.stdout[:500]}")  # Truncate long output
         else:
             logger.error(f"Command failed (exit_code={exec_result.exit_code})")
             if exec_result.stderr:
@@ -285,9 +271,7 @@ class LunetteSandboxEnvironment(SandboxEnvironment):
         return parsed_result
 
     @override
-    async def write_file(
-        self, file: str, contents: str | bytes, *, text: bool = True
-    ) -> None:
+    async def write_file(self, file: str, contents: str | bytes, *, text: bool = True) -> None:
         # Create temporary local file
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tmp:
             if isinstance(contents, str):
