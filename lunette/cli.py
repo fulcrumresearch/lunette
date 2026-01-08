@@ -80,7 +80,7 @@ async def investigate_command(plan_file: Path, run_id: str, limit: int):
 
     async with LunetteClient() as client:
         results = await client.investigate(run_id, plan, limit=limit)
-        print(json.dumps(results.model_dump(), indent=2))
+        print(json.dumps(results.model_dump(mode="json"), indent=2))
 
 
 def eval_command(eval_args: list[str]) -> int:

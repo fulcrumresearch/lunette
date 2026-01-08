@@ -255,7 +255,7 @@ class LunetteClient:
             raise ValueError("Cannot save run with empty trajectory list")
 
         # Serialize run to JSON
-        run_dict = run.model_dump()
+        run_dict = run.model_dump(mode="json")
 
         response = await self._client.post("/runs/save", json=run_dict)
         response.raise_for_status()
