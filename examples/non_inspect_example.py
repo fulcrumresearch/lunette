@@ -14,7 +14,9 @@ This is useful for:
 import asyncio
 import json
 from anthropic import AsyncAnthropic
-from lunette import LunetteClient, Run, Trajectory
+from lunette import LunetteClient
+from lunette.models.run import Run
+from lunette.models.trajectory import Trajectory
 from lunette.models.messages import (
     SystemMessage,
     UserMessage,
@@ -49,7 +51,7 @@ async def main():
         # Create a sandbox with Python installed
         service = {"image": "python:3.11-slim"}
         sandbox = await lunette_client.create_sandbox(service)
-        print(f"Sandbox created: {sandbox.container_id}\n")
+        print(f"Sandbox created: {sandbox}\n")
 
         # Start building our trajectory
         messages = []
@@ -81,7 +83,7 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
 
             # Call Claude
             response = await anthropic.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-4-5",
                 max_tokens=4096,
                 system=system_prompt,
                 messages=claude_messages,
@@ -166,13 +168,13 @@ save it to /tmp/fibonacci.py, then execute it and show me the output."""
             sample="fibonacci_task_001",
             messages=messages,
             scores={"success": score},
-            metadata={"sandbox_id": sandbox.container_id, "task": "fibonacci_script", "turns": turn + 1},
+            metadata={"task": "fibonacci_script", "turns": turn + 1},
         )
 
         # Create and save run
         run = Run(
             task="fibonacci-script-creation",
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-5",
             trajectories=[trajectory],
         )
 
