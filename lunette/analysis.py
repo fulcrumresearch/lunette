@@ -3,10 +3,10 @@
 from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 import yaml
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter, model_validator
 
 
 # --- trajectory filters ---
@@ -88,8 +88,19 @@ class AnalysisPlanBase(ABC, BaseModel):
     model: str | None = Field(None, description="LLM model")
     max_turns: int | None = Field(None, description="Maximum number of turns")
 
-    # result schema for structured output (overridden in subclasses)
+    # result schema - ClassVar for type reference, instance field for serialization
     result_schema: ClassVar[type[BaseModel] | None] = None
+    result_schema_json: dict[str, Any] | None = Field(
+        default=None,
+        description="JSON schema for structured output format. Auto-populated from result_schema ClassVar if not set.",
+    )
+
+    @model_validator(mode="after")
+    def _populate_result_schema_json(self) -> Self:
+        """Auto-populate result_schema_json from the ClassVar result_schema if not explicitly set."""
+        if self.result_schema_json is None and self.result_schema is not None:
+            object.__setattr__(self, "result_schema_json", self.result_schema.model_json_schema())
+        return self
 
     def to_yaml(self) -> str:
         """
